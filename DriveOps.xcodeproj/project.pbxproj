@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		9661CECF2F7510F600B851E8 /* SwiftOBD2 in Frameworks */ = {isa = PBXBuildFile; productRef = 9661CECE2F7510F600B851E8 /* SwiftOBD2 */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		962FAE5E2F73AF62008D4207 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -52,6 +56,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				9661CECF2F7510F600B851E8 /* SwiftOBD2 in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -112,6 +117,7 @@
 			);
 			name = DriveOps;
 			packageProductDependencies = (
+				9661CECE2F7510F600B851E8 /* SwiftOBD2 */,
 			);
 			productName = DriveOps;
 			productReference = 962FAE4E2F73AF60008D4207 /* DriveOps.app */;
@@ -195,6 +201,9 @@
 			);
 			mainGroup = 962FAE452F73AF60008D4207;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				9661CECD2F7510F600B851E8 /* XCRemoteSwiftPackageReference "SwiftOBD2" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 962FAE4F2F73AF60008D4207 /* Products */;
 			projectDirPath = "";
@@ -390,6 +399,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = YPPL9F7Y4F;
@@ -434,6 +444,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = YPPL9F7Y4F;
@@ -615,6 +626,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		9661CECD2F7510F600B851E8 /* XCRemoteSwiftPackageReference "SwiftOBD2" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/kkonteh97/SwiftOBD2.git";
+			requirement = {
+				branch = main;
+				kind = branch;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		9661CECE2F7510F600B851E8 /* SwiftOBD2 */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 9661CECD2F7510F600B851E8 /* XCRemoteSwiftPackageReference "SwiftOBD2" */;
+			productName = SwiftOBD2;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 962FAE462F73AF60008D4207 /* Project object */;
 }
