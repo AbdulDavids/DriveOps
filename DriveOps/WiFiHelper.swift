@@ -4,6 +4,7 @@
 //
 
 import Foundation
+import Combine
 
 @MainActor
 class WiFiHelper: ObservableObject {

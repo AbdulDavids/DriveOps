@@ -20,26 +20,39 @@ struct ContentView: View {
     }
 
     var body: some View {
+        TabView {
+            dashboardTab
+                .tabItem {
+                    Label("Dashboard", systemImage: "gauge.with.needle")
+                }
+
+            logsTab
+                .tabItem {
+                    Label("Logs", systemImage: "terminal")
+                }
+
+            settingsTab
+                .tabItem {
+                    Label("Settings", systemImage: "gear")
+                }
+        }
+        .sheet(isPresented: $showWifiSheet) {
+            wifiInfoSheet
+        }
+    }
+
+    // MARK: - Tabs
+
+    var dashboardTab: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 20) {
-                    HStack(alignment: .firstTextBaseline, spacing: 8) {
-                        Text("DriveOps")
-                            .font(.largeTitle.bold())
-                        Text("v\(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "?")")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        Spacer()
-                    }
                     connectionCard
                     if let info = vm.obdInfo {
                         vehicleInfoCard(info)
                     }
                     if !vm.liveData.isEmpty {
                         liveDataCard
-                    }
-                    if !vm.logs.isEmpty {
-                        logCard
                     }
                     if let error = vm.errorMessage {
                         Text(error)
@@ -51,12 +64,65 @@ struct ContentView: View {
                 }
                 .padding()
             }
+            .navigationTitle("DriveOps")
             #if os(iOS)
-            .navigationBarTitleDisplayMode(.inline)
+            .navigationBarTitleDisplayMode(.large)
             #endif
-            .sheet(isPresented: $showWifiSheet) {
-                wifiInfoSheet
+        }
+    }
+
+    var logsTab: some View {
+        NavigationStack {
+            ScrollView {
+                if vm.logs.isEmpty {
+                    ContentUnavailableView("No Logs Yet", systemImage: "terminal", description: Text("Connect to a vehicle to see activity"))
+                        .padding(.top, 60)
+                } else {
+                    VStack(alignment: .leading, spacing: 4) {
+                        ForEach(Array(vm.logs.enumerated()), id: \.offset) { _, line in
+                            Text(line)
+                                .font(.system(.caption, design: .monospaced))
+                                .foregroundStyle(.secondary)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                    }
+                    .padding()
+                }
             }
+            .navigationTitle("Logs")
+            .toolbar {
+                if !vm.logs.isEmpty {
+                    Button("Clear") { vm.logs.removeAll() }
+                        .font(.caption)
+                }
+            }
+            #if os(iOS)
+            .navigationBarTitleDisplayMode(.large)
+            #endif
+        }
+    }
+
+    var settingsTab: some View {
+        NavigationStack {
+            List {
+                Section {
+                    HStack {
+                        Text("Version")
+                        Spacer()
+                        Text(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "?")
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
+                Section("Connection") {
+                    Button("Demo Mode") { vm.connectDemo() }
+                        .disabled(vm.isConnecting || vm.connectionState == .connectedToVehicle)
+                }
+            }
+            .navigationTitle("Settings")
+            #if os(iOS)
+            .navigationBarTitleDisplayMode(.large)
+            #endif
         }
     }
 
@@ -68,25 +134,24 @@ struct ContentView: View {
                 .font(.system(size: 40))
                 .foregroundStyle(.orange)
 
-            HStack(spacing: 4) {
-                Text("Network:")
-                    .foregroundStyle(.secondary)
-                if wifi.isLoading {
-                    ProgressView().controlSize(.small)
-                } else if let ssid = wifi.currentSSID {
+            if let ssid = wifi.currentSSID {
+                HStack(spacing: 4) {
+                    Text("Network:")
+                        .foregroundStyle(.secondary)
                     Text(ssid)
                         .bold()
                         .foregroundStyle(wifi.looksLikeOBD ? .green : .primary)
-                } else {
-                    Text("None").bold()
                 }
-            }
-            .font(.subheadline)
-
-            if wifi.looksLikeOBD {
-                Label("Looks like an OBD adapter!", systemImage: "checkmark.circle.fill")
-                    .foregroundStyle(.green)
-                    .font(.caption)
+                .font(.subheadline)
+                if wifi.looksLikeOBD {
+                    Label("Looks like an OBD adapter!", systemImage: "checkmark.circle.fill")
+                        .foregroundStyle(.green)
+                        .font(.caption)
+                }
+            } else {
+                Text("Make sure you're on your adapter's WiFi")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
             }
 
             VStack(alignment: .leading, spacing: 10) {
@@ -148,10 +213,6 @@ struct ContentView: View {
                 Text(statusLabel)
                     .font(.subheadline)
                 Spacer()
-                Button("Demo") { vm.connectDemo() }
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .disabled(vm.isConnecting || vm.connectionState == .connectedToVehicle)
             }
 
             HStack(spacing: 12) {
@@ -224,41 +285,6 @@ struct ContentView: View {
             let sorted = vm.liveData.sorted(by: { $0.key < $1.key })
             ForEach(sorted, id: \.key) { key, value in
                 infoRow(key, value: value)
-            }
-        }
-        .padding()
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    // MARK: - Log Card
-
-    var logCard: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Label("Debug Log", systemImage: "terminal")
-                    .font(.headline)
-                Spacer()
-                Button("Clear") { vm.logs.removeAll() }
-                    .font(.caption)
-            }
-            Divider()
-            ScrollViewReader { proxy in
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 4) {
-                        ForEach(Array(vm.logs.enumerated()), id: \.offset) { i, line in
-                            Text(line)
-                                .font(.system(.caption, design: .monospaced))
-                                .foregroundStyle(.secondary)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .id(i)
-                        }
-                    }
-                }
-                .frame(maxHeight: 180)
-                .onChange(of: vm.logs.count) { _, _ in
-                    proxy.scrollTo(vm.logs.count - 1, anchor: .bottom)
-                }
             }
         }
         .padding()
