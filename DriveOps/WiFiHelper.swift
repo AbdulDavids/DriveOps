@@ -4,14 +4,11 @@
 //
 
 import Foundation
-import Combine
-import NetworkExtension
-import SystemConfiguration.CaptiveNetwork
 
 @MainActor
 class WiFiHelper: ObservableObject {
     @Published var currentSSID: String?
-    @Published var isLoading = false
+    @Published var ssidUnavailable = false
 
     var looksLikeOBD: Bool {
         guard let ssid = currentSSID?.lowercased() else { return false }
@@ -20,17 +17,9 @@ class WiFiHelper: ObservableObject {
     }
 
     func refresh() {
-        isLoading = true
-        #if os(iOS)
-        NEHotspotNetwork.fetchCurrent { [weak self] network in
-            Task { @MainActor in
-                self?.currentSSID = network?.ssid
-                self?.isLoading = false
-            }
-        }
-        #else
+        // Access WiFi Information entitlement requires a paid developer account.
+        // For now, we skip SSID detection and just show the setup guide.
         currentSSID = nil
-        isLoading = false
-        #endif
+        ssidUnavailable = true
     }
 }
