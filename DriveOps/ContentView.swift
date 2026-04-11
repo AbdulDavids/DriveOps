@@ -8,6 +8,8 @@ import SwiftOBD2
 
 struct ContentView: View {
     @StateObject private var vm: OBDViewModel
+    @StateObject private var wifi = WiFiHelper()
+    @State private var showWifiSheet = false
 
     init(vm: OBDViewModel) {
         _vm = StateObject(wrappedValue: vm)
@@ -21,6 +23,14 @@ struct ContentView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 20) {
+                    HStack(alignment: .firstTextBaseline, spacing: 8) {
+                        Text("DriveOps")
+                            .font(.largeTitle.bold())
+                        Text("v\(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "?")")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                    }
                     connectionCard
                     if let info = vm.obdInfo {
                         vehicleInfoCard(info)
@@ -41,7 +51,89 @@ struct ContentView: View {
                 }
                 .padding()
             }
-            .navigationTitle("DriveOps")
+            #if os(iOS)
+            .navigationBarTitleDisplayMode(.inline)
+            #endif
+            .sheet(isPresented: $showWifiSheet) {
+                wifiInfoSheet
+            }
+        }
+    }
+
+    // MARK: - Wi-Fi Info Sheet
+
+    var wifiInfoSheet: some View {
+        VStack(spacing: 16) {
+            Image(systemName: "wifi.exclamationmark")
+                .font(.system(size: 40))
+                .foregroundStyle(.orange)
+
+            HStack(spacing: 4) {
+                Text("Network:")
+                    .foregroundStyle(.secondary)
+                if wifi.isLoading {
+                    ProgressView().controlSize(.small)
+                } else if let ssid = wifi.currentSSID {
+                    Text(ssid)
+                        .bold()
+                        .foregroundStyle(wifi.looksLikeOBD ? .green : .primary)
+                } else {
+                    Text("None").bold()
+                }
+            }
+            .font(.subheadline)
+
+            if wifi.looksLikeOBD {
+                Label("Looks like an OBD adapter!", systemImage: "checkmark.circle.fill")
+                    .foregroundStyle(.green)
+                    .font(.caption)
+            }
+
+            VStack(alignment: .leading, spacing: 10) {
+                wifiStep("car.fill", "Plug adapter into OBD-II port (under dashboard, being mysterious)")
+                wifiStep("key.fill", "Turn the car on — adapter needs juice")
+                wifiStep("gear", "Settings > Wi-Fi, look for \"WiFi_OBDII\" or similar. Home WiFi won't cut it, sorry")
+                wifiStep("wifi", "Connect. Yes you lose internet. Your car > Twitter. Probably")
+                wifiStep("arrow.uturn.left", "Come back, hit Connect")
+            }
+            .padding()
+            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 10))
+
+            HStack(spacing: 12) {
+                #if os(iOS)
+                Button("Settings") {
+                    if let url = URL(string: "App-Prefs:root=WIFI") {
+                        UIApplication.shared.open(url)
+                    }
+                }
+                .buttonStyle(.bordered)
+                .frame(maxWidth: .infinity)
+                #endif
+
+                Button("Connect") {
+                    showWifiSheet = false
+                    vm.connectWifi()
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(.orange)
+                .disabled(vm.isConnecting)
+                .frame(maxWidth: .infinity)
+            }
+        }
+        .padding()
+        .presentationDetents([.medium])
+        .onAppear { wifi.refresh() }
+    }
+
+    func wifiStep(_ icon: String, _ text: String) -> some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: icon)
+                .font(.caption)
+                .foregroundStyle(.orange)
+                .frame(width: 20)
+            Text(text)
+                .font(.caption)
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 
@@ -56,21 +148,26 @@ struct ContentView: View {
                 Text(statusLabel)
                     .font(.subheadline)
                 Spacer()
+                Button("Demo") { vm.connectDemo() }
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .disabled(vm.isConnecting || vm.connectionState == .connectedToVehicle)
             }
 
             HStack(spacing: 12) {
                 Button(action: { vm.connect() }) {
-                    Label("Bluetooth", systemImage: "dot.radiowaves.left.and.right")
+                    Label("BT", systemImage: "dot.radiowaves.left.and.right")
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent)
                 .disabled(vm.isConnecting || vm.connectionState == .connectedToVehicle)
 
-                Button(action: { vm.connectDemo() }) {
-                    Label("Demo", systemImage: "play.fill")
+                Button(action: { showWifiSheet = true }) {
+                    Label("WiFi", systemImage: "wifi")
                         .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(.borderedProminent)
+                .tint(.orange)
                 .disabled(vm.isConnecting || vm.connectionState == .connectedToVehicle)
             }
 

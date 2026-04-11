@@ -53,6 +53,26 @@ class OBDViewModel: ObservableObject {
         }
     }
 
+    func connectWifi() {
+        isConnecting = true
+        errorMessage = nil
+        log("Connecting via Wi-Fi…")
+        let wifiService = OBDService(connectionType: .wifi)
+        Task {
+            do {
+                let info = try await wifiService.startConnection()
+                self.obdInfo = info
+                self.isConnecting = false
+                self.log("Wi-Fi connected. Protocol: \(info.obdProtocol?.description ?? "unknown"), VIN: \(info.vin ?? "n/a"), PIDs: \(info.supportedPIDs?.count ?? 0)")
+                self.startLiveDataWith(wifiService)
+            } catch {
+                self.log("Wi-Fi connection failed: \(error.localizedDescription)")
+                self.errorMessage = error.localizedDescription
+                self.isConnecting = false
+            }
+        }
+    }
+
     func connectDemo() {
         isConnecting = true
         errorMessage = nil
