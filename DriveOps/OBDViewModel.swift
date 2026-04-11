@@ -10,7 +10,7 @@ import SwiftOBD2
 @MainActor
 class OBDViewModel: ObservableObject {
     private let bluetoothService = OBDService(connectionType: .bluetooth)
-    private var activeService: OBDService?
+    var activeService: OBDService?
 
     @Published var connectionState: ConnectionState = .disconnected
     @Published var obdInfo: OBDInfo?
@@ -19,6 +19,9 @@ class OBDViewModel: ObservableObject {
     @Published var isConnecting = false
     @Published var activeConnectionType: ConnectionType?
     @Published var logs: [String] = []
+    @Published var troubleCodes: [ECUID: [TroubleCode]] = [:]
+    @Published var isScanningCodes = false
+    @Published var scanError: String?
 
     private var cancellables = Set<AnyCancellable>()
     private var connectTask: Task<Void, Never>?

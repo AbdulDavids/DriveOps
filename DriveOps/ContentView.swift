@@ -27,6 +27,11 @@ struct ContentView: View {
                     Label("Dashboard", systemImage: "gauge.with.needle")
                 }
 
+            DiagnosticsView(vm: vm)
+                .tabItem {
+                    Label("Diagnostics", systemImage: "stethoscope")
+                }
+
             LogsView(vm: vm)
                 .tabItem {
                     Label("Logs", systemImage: "terminal")
