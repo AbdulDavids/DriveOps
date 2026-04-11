@@ -416,7 +416,7 @@
 				CODE_SIGN_ENTITLEMENTS = DriveOps/DriveOps.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 2;
 				DEVELOPMENT_TEAM = YPPL9F7Y4F;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -424,6 +424,7 @@
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = DriveOps/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = DriveOps;
 				INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription = "DriveOps needs Bluetooth to connect to your OBD2 adapter.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "DriveOps needs your location to detect which Wi-Fi network you're connected to, so we can check if it's your OBD adapter.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
@@ -440,7 +441,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 26.2;
-				MARKETING_VERSION = 0.1.2;
+				MARKETING_VERSION = 0.2.1;
 				PRODUCT_BUNDLE_IDENTIFIER = abduldavids.DriveOps;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -467,7 +468,7 @@
 				CODE_SIGN_ENTITLEMENTS = DriveOps/DriveOps.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 2;
 				DEVELOPMENT_TEAM = YPPL9F7Y4F;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -475,6 +476,7 @@
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = DriveOps/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = DriveOps;
 				INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription = "DriveOps needs Bluetooth to connect to your OBD2 adapter.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "DriveOps needs your location to detect which Wi-Fi network you're connected to, so we can check if it's your OBD adapter.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
@@ -491,7 +493,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 26.2;
-				MARKETING_VERSION = 0.1.2;
+				MARKETING_VERSION = 0.2.1;
 				PRODUCT_BUNDLE_IDENTIFIER = abduldavids.DriveOps;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";

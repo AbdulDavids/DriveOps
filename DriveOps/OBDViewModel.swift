@@ -9,98 +9,112 @@ import SwiftOBD2
 
 @MainActor
 class OBDViewModel: ObservableObject {
-    private let obdService = OBDService(connectionType: .bluetooth)
+    private let bluetoothService = OBDService(connectionType: .bluetooth)
+    private var activeService: OBDService?
 
     @Published var connectionState: ConnectionState = .disconnected
     @Published var obdInfo: OBDInfo?
     @Published var liveData: [String: String] = [:]
     @Published var errorMessage: String?
     @Published var isConnecting = false
+    @Published var activeConnectionType: ConnectionType?
     @Published var logs: [String] = []
 
     private var cancellables = Set<AnyCancellable>()
+    private var connectTask: Task<Void, Never>?
     private var pollTask: Task<Void, Never>?
 
     init(bindServiceState: Bool = true) {
         if bindServiceState {
-            obdService.$connectionState
+            bluetoothService.$connectionState
                 .receive(on: DispatchQueue.main)
                 .assign(to: &$connectionState)
         }
     }
 
-    private func log(_ message: String) {
+    // MARK: - Logging
+
+    func log(_ message: String) {
         let ts = DateFormatter.localizedString(from: Date(), dateStyle: .none, timeStyle: .medium)
         logs.append("[\(ts)] \(message)")
     }
 
+    // MARK: - Connection
+
     func connect() {
-        isConnecting = true
-        errorMessage = nil
-        log("Scanning for Bluetooth adapter…")
-        Task {
-            do {
-                let info = try await obdService.startConnection()
-                self.obdInfo = info
-                self.isConnecting = false
-                self.log("Connected. Protocol: \(info.obdProtocol?.description ?? "unknown"), VIN: \(info.vin ?? "n/a"), PIDs: \(info.supportedPIDs?.count ?? 0)")
-                self.startLiveData()
-            } catch {
-                self.log("Connection failed: \(error.localizedDescription)")
-                self.errorMessage = error.localizedDescription
-                self.isConnecting = false
-            }
-        }
+        startConnecting(type: .bluetooth, service: bluetoothService)
     }
 
     func connectWifi() {
-        isConnecting = true
-        errorMessage = nil
-        log("Connecting via Wi-Fi…")
-        let wifiService = OBDService(connectionType: .wifi)
-        Task {
-            do {
-                let info = try await wifiService.startConnection()
-                self.obdInfo = info
-                self.isConnecting = false
-                self.log("Wi-Fi connected. Protocol: \(info.obdProtocol?.description ?? "unknown"), VIN: \(info.vin ?? "n/a"), PIDs: \(info.supportedPIDs?.count ?? 0)")
-                self.startLiveDataWith(wifiService)
-            } catch {
-                self.log("Wi-Fi connection failed: \(error.localizedDescription)")
-                self.errorMessage = error.localizedDescription
-                self.isConnecting = false
-            }
-        }
+        startConnecting(type: .wifi, service: OBDService(connectionType: .wifi))
     }
 
     func connectDemo() {
+        startConnecting(type: .demo, service: OBDService(connectionType: .demo))
+    }
+
+    func cancelConnection() {
+        log("Connection cancelled.")
+        connectTask?.cancel()
+        connectTask = nil
+        activeService?.stopConnection()
+        activeService = nil
+        isConnecting = false
+        activeConnectionType = nil
+        connectionState = .disconnected
+    }
+
+    func disconnect() {
+        log("Disconnecting…")
+        pollTask?.cancel()
+        pollTask = nil
+        activeService?.stopConnection()
+        activeService = nil
+        connectionState = .disconnected
+        activeConnectionType = nil
+        obdInfo = nil
+        liveData = [:]
+    }
+
+    private func startConnecting(type: ConnectionType, service: OBDService) {
         isConnecting = true
+        activeConnectionType = type
         errorMessage = nil
-        log("Starting demo connection…")
-        let demoService = OBDService(connectionType: .demo)
-        Task {
+        log("Connecting via \(type.rawValue)…")
+        bind(service)
+        connectTask = Task {
             do {
-                let info = try await demoService.startConnection()
+                let info = try await service.startConnection()
+                guard !Task.isCancelled else { return }
                 self.obdInfo = info
                 self.isConnecting = false
-                self.log("Demo connected. Protocol: \(info.obdProtocol?.description ?? "unknown"), VIN: \(info.vin ?? "n/a"), PIDs: \(info.supportedPIDs?.count ?? 0)")
-                self.startLiveDataWith(demoService)
+                self.connectTask = nil
+                self.log("Connected via \(type.rawValue). Protocol: \(info.obdProtocol?.description ?? "unknown"), VIN: \(info.vin ?? "n/a"), PIDs: \(info.supportedPIDs?.count ?? 0)")
+                self.startLiveDataWith(service)
             } catch {
-                self.log("Demo connection failed: \(error.localizedDescription)")
+                guard !Task.isCancelled else { return }
+                self.log("\(type.rawValue) connection failed: \(error.localizedDescription)")
                 self.errorMessage = error.localizedDescription
                 self.isConnecting = false
+                self.activeConnectionType = nil
+                self.connectTask = nil
             }
         }
     }
 
-    private func startLiveData() {
-        startLiveDataWith(obdService)
+    // MARK: - Private
+
+    private func bind(_ service: OBDService) {
+        activeService = service
+        cancellables.removeAll()
+        service.$connectionState
+            .receive(on: DispatchQueue.main)
+            .assign(to: &$connectionState)
     }
 
     private func startLiveDataWith(_ service: OBDService) {
-        // Note: .fuelLevel is excluded — the library's mock response passes a Double
-        // to a %02X format specifier, crashing String(format:) on every poll.
-        // .controlModuleVoltage has no mock response at all.
+        // Note: .fuelLevel excluded — library mock passes Double to %02X format specifier (crash).
+        // .controlModuleVoltage excluded — no mock response implemented upstream.
         let pids: [OBDCommand] = [
             .mode1(.rpm),
             .mode1(.speed),
@@ -119,11 +133,9 @@ class OBDViewModel: ObservableObject {
             while !Task.isCancelled {
                 do {
                     let results = try await service.requestPIDs(pids, unit: .metric)
-                    if results.isEmpty {
-                        self.log("⚠️ Empty batch")
-                    }
+                    if results.isEmpty { self.log("⚠️ Empty batch") }
                     var updated = self.liveData
-                    for (cmd, measurement) in results {
+                    for (cmd, measurement): (OBDCommand, MeasurementResult) in results {
                         updated[cmd.properties.description] = "\((measurement.value * 10).rounded() / 10) \(measurement.unit.symbol)"
                     }
                     self.liveData = updated
@@ -138,13 +150,24 @@ class OBDViewModel: ObservableObject {
             }
         }
     }
+}
 
-    func disconnect() {
-        log("Disconnecting…")
-        pollTask?.cancel()
-        pollTask = nil
-        obdService.stopConnection()
-        obdInfo = nil
-        liveData = [:]
+// MARK: - Debug Stubs
+
+#if DEBUG
+extension OBDViewModel {
+    static func stub(
+        state: ConnectionState,
+        info: OBDInfo? = nil,
+        liveData: [String: String] = [:],
+        error: String? = nil
+    ) -> OBDViewModel {
+        let vm = OBDViewModel(bindServiceState: false)
+        vm.connectionState = state
+        vm.obdInfo = info
+        vm.liveData = liveData
+        vm.errorMessage = error
+        return vm
     }
 }
+#endif
