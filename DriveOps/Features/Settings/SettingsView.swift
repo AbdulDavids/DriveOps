@@ -17,6 +17,15 @@ private struct ChangelogEntry: Identifiable {
 
 private let changelog: [ChangelogEntry] = [
     ChangelogEntry(
+        version: "0.2.6",
+        date: "Apr 2026",
+        items: [
+            "Welcome flow on first launch",
+            "Demo mode prompt on dashboard when disconnected",
+            "Version shows build number in Settings"
+        ]
+    ),
+    ChangelogEntry(
         version: "0.2.5",
         date: "Apr 2026",
         items: [
@@ -28,7 +37,7 @@ private let changelog: [ChangelogEntry] = [
     ),
     ChangelogEntry(
         version: "0.2.0",
-        date: "Mar 2026",
+        date: "Apr 2026",
         items: [
             "Wi-Fi OBD adapter support",
             "Improved Bluetooth reconnection",
@@ -37,7 +46,7 @@ private let changelog: [ChangelogEntry] = [
     ),
     ChangelogEntry(
         version: "0.1.0",
-        date: "Feb 2026",
+        date: "Mar 2026",
         items: [
             "Initial release",
             "Bluetooth OBD2 connection",
