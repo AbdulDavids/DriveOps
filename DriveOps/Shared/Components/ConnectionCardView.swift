@@ -58,6 +58,7 @@ struct ConnectionCardView: View {
                 .font(.caption2)
                 .foregroundStyle(.secondary)
             #endif
+            Spacer(minLength: 0)
         }
         .padding()
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))

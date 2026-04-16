@@ -83,7 +83,41 @@ struct TroubleCodeDetailView: View {
         #endif
     }
 
-    private var codeTypeDescription: String {
+}
+
+private func decodeCode(_ json: String) -> TroubleCode {
+    try! JSONDecoder().decode(TroubleCode.self, from: Data(json.utf8))
+}
+
+#Preview("Powertrain Code") {
+    NavigationStack {
+        TroubleCodeDetailView(
+            code: decodeCode(#"{"code":"P0420","description":"Catalyst System Efficiency Below Threshold (Bank 1)"}"#),
+            ecu: .engine
+        )
+    }
+}
+
+#Preview("Transmission Code") {
+    NavigationStack {
+        TroubleCodeDetailView(
+            code: decodeCode(#"{"code":"P0700","description":"Transmission Control System Malfunction"}"#),
+            ecu: .transmission
+        )
+    }
+}
+
+#Preview("Network Code") {
+    NavigationStack {
+        TroubleCodeDetailView(
+            code: decodeCode(#"{"code":"U0100","description":"Lost Communication With ECM/PCM 'A'"}"#),
+            ecu: .unknown
+        )
+    }
+}
+
+private extension TroubleCodeDetailView {
+    var codeTypeDescription: String {
         guard code.code.count >= 2, let digit = code.code.dropFirst().first.map({ String($0) }), let n = Int(digit) else {
             return "Unknown"
         }

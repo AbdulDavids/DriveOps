@@ -163,13 +163,19 @@ extension OBDViewModel {
         state: ConnectionState,
         info: OBDInfo? = nil,
         liveData: [String: String] = [:],
-        error: String? = nil
+        error: String? = nil,
+        troubleCodes: [ECUID: [TroubleCode]] = [:],
+        isScanningCodes: Bool = false,
+        scanError: String? = nil
     ) -> OBDViewModel {
         let vm = OBDViewModel(bindServiceState: false)
         vm.connectionState = state
         vm.obdInfo = info
         vm.liveData = liveData
         vm.errorMessage = error
+        vm.troubleCodes = troubleCodes
+        vm.isScanningCodes = isScanningCodes
+        vm.scanError = scanError
         return vm
     }
 }

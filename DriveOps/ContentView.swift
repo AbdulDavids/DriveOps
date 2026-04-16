@@ -53,27 +53,27 @@ struct ContentView: View {
 
 // MARK: - Previews
 
+private let previewInfo = try? JSONDecoder().decode(OBDInfo.self, from: Data(#"{"vin":"1HGBH41JXMN109186"}"#.utf8))
+
+private let previewLiveData: [String: String] = [
+    "Engine RPM": "2450.0 rpm",
+    "Vehicle Speed": "87.0 km/h",
+    "Coolant Temp": "91.0 °C",
+    "Throttle Position": "23.5 %",
+    "Engine Load": "42.0 %",
+    "Intake Air Temp": "34.0 °C",
+    "MAF": "12.4 g/s",
+    "Barometric Pressure": "101.0 kPa",
+    "Intake Manifold Pressure": "95.0 kPa",
+    "Timing Advance": "14.0 °",
+]
+
 #Preview("Disconnected") {
     ContentView(vm: .stub(state: .disconnected))
 }
 
 #Preview("Connected – Live Data") {
-    ContentView(vm: .stub(
-        state: .connectedToVehicle,
-        info: (try? JSONDecoder().decode(OBDInfo.self, from: Data(#"{"vin":"1HGBH41JXMN109186"}"#.utf8))),
-        liveData: [
-            "Engine RPM": "2450.0 rpm",
-            "Vehicle Speed": "87.0 km/h",
-            "Coolant Temp": "91.0 °C",
-            "Throttle Position": "23.5 %",
-            "Engine Load": "42.0 %",
-            "Intake Air Temp": "34.0 °C",
-            "MAF": "12.4 g/s",
-            "Barometric Pressure": "101.0 kPa",
-            "Intake Manifold Pressure": "95.0 kPa",
-            "Timing Advance": "14.0 °",
-        ]
-    ))
+    ContentView(vm: .stub(state: .connectedToVehicle, info: previewInfo, liveData: previewLiveData))
 }
 
 #Preview("Connecting") {

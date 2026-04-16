@@ -25,6 +25,17 @@ struct SettingsView: View {
                     Button("Demo Mode") { vm.connectDemo() }
                         .disabled(vm.isConnecting || vm.connectionState == .connectedToVehicle)
                 }
+
+                Section {
+                    VStack(spacing: 6) {
+                        Text("In memory of Rohan")
+                            .font(.footnote)
+                            .fontWeight(.medium)
+                            .foregroundStyle(.secondary)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 4)
+                }
             }
             .navigationTitle("Settings")
             #if os(iOS)

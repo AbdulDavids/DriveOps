@@ -7,6 +7,11 @@ import SwiftUI
 
 struct LiveDataCardView: View {
     let liveData: [String: String]
+    var isWide: Bool = false
+
+    private var sorted: [(key: String, value: String)] {
+        liveData.sorted { $0.key < $1.key }
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -15,9 +20,17 @@ struct LiveDataCardView: View {
 
             Divider()
 
-            let sorted = liveData.sorted(by: { $0.key < $1.key })
-            ForEach(sorted, id: \.key) { key, value in
-                InfoRow(label: key, value: value)
+            if isWide {
+                let columns = [GridItem(.flexible()), GridItem(.flexible())]
+                LazyVGrid(columns: columns, spacing: 8) {
+                    ForEach(sorted, id: \.key) { key, value in
+                        InfoRow(label: key, value: value)
+                    }
+                }
+            } else {
+                ForEach(sorted, id: \.key) { key, value in
+                    InfoRow(label: key, value: value)
+                }
             }
         }
         .padding()
