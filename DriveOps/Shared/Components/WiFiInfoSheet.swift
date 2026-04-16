@@ -33,7 +33,7 @@ struct WiFiInfoSheet: View {
 
             VStack(alignment: .leading, spacing: 8) {
                 wifiStep("1", "Plug adapter into OBD-II port under dashboard")
-                wifiStep("2", "Turn car onr")
+                wifiStep("2", "Turn car on")
                 wifiStep("3", "Go to Settings › Wi-Fi and connect to your OBD Adapter network")
                 wifiStep("4", "Come back and tap Connect")
             }

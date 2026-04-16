@@ -39,6 +39,10 @@ struct DashboardView: View {
                         LiveDataCardView(liveData: vm.liveData, isWide: isWide)
                     }
 
+                    if vm.connectionState == .disconnected && !vm.isConnecting {
+                        DemoModePrompt { vm.connectDemo() }
+                    }
+
                     if let error = vm.errorMessage {
                         Text(error)
                             .foregroundStyle(.red)
@@ -54,5 +58,28 @@ struct DashboardView: View {
             .navigationBarTitleDisplayMode(.large)
             #endif
         }
+    }
+}
+
+// MARK: - Demo Mode Prompt
+
+private struct DemoModePrompt: View {
+    let onTap: () -> Void
+
+    var body: some View {
+        VStack(spacing: 12) {
+            Text("No obd scanner thingie (or no car)..?")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+
+            Button(action: onTap) {
+                Label("Try Demo Mode", systemImage: "play.circle.fill")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.bordered)
+            .tint(.secondary)
+        }
+        .padding()
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
     }
 }
