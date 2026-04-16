@@ -6,26 +6,91 @@
 import SwiftUI
 import SwiftOBD2
 
+// MARK: - Changelog
+
+private struct ChangelogEntry: Identifiable {
+    let id = UUID()
+    let version: String
+    let date: String
+    let items: [String]
+}
+
+private let changelog: [ChangelogEntry] = [
+    ChangelogEntry(
+        version: "0.2.5",
+        date: "Apr 2026",
+        items: [
+            "New Diagnostics tab — read & clear DTCs",
+            "Trouble code detail view with descriptions",
+            "Dashboard & live data card polish",
+            "Bug fixes across connection flow"
+        ]
+    ),
+    ChangelogEntry(
+        version: "0.2.0",
+        date: "Mar 2026",
+        items: [
+            "Wi-Fi OBD adapter support",
+            "Improved Bluetooth reconnection",
+            "Navbar & tab bar redesign"
+        ]
+    ),
+    ChangelogEntry(
+        version: "0.1.0",
+        date: "Feb 2026",
+        items: [
+            "Initial release",
+            "Bluetooth OBD2 connection",
+            "Live sensor dashboard"
+        ]
+    ),
+]
+
+// MARK: - Views
+
 struct SettingsView: View {
     @ObservedObject var vm: OBDViewModel
+
+    private var appVersion: String {
+        let v = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "?"
+        let b = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "?"
+        return "\(v) (\(b))"
+    }
 
     var body: some View {
         NavigationStack {
             List {
+                // Welcome card
+                Section {
+                    WelcomeCard()
+                }
+                .listRowInsets(EdgeInsets())
+                .listRowBackground(Color.clear)
+
+                // Version
                 Section {
                     HStack {
                         Text("Version")
                         Spacer()
-                        Text(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "?")
+                        Text(appVersion)
                             .foregroundStyle(.secondary)
                     }
                 }
 
+                // Connection
                 Section("Connection") {
                     Button("Demo Mode") { vm.connectDemo() }
                         .disabled(vm.isConnecting || vm.connectionState == .connectedToVehicle)
                 }
 
+                // Changelog
+                Section("What's New") {
+                    ForEach(changelog) { entry in
+                        ChangelogEntryRow(entry: entry)
+                    }
+                }
+
+                // Footer
                 Section {
                     VStack(spacing: 6) {
                         Text("In memory of Rohan")
@@ -42,5 +107,85 @@ struct SettingsView: View {
             .navigationBarTitleDisplayMode(.large)
             #endif
         }
+    }
+}
+
+// MARK: - Welcome Card
+
+private struct WelcomeCard: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 12) {
+                Image(systemName: "car.fill")
+                    .font(.title2)
+                    .foregroundStyle(.white)
+                    .frame(width: 44, height: 44)
+                    .background(Color.accentColor, in: RoundedRectangle(cornerRadius: 10))
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Welcome to DriveOps")
+                        .font(.headline)
+                    Text("by Abdul Baari Davids")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            Text("A real-time OBD2 diagnostics app for iOS. Connect via Bluetooth or Wi-Fi to your adapter and get live sensor data, trouble codes, and vehicle info — right on your phone.")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding()
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+// MARK: - Changelog Row
+
+private struct ChangelogEntryRow: View {
+    let entry: ChangelogEntry
+    @State private var expanded = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Button {
+                withAnimation(.easeInOut(duration: 0.2)) { expanded.toggle() }
+            } label: {
+                HStack {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("v\(entry.version)")
+                            .font(.subheadline)
+                            .fontWeight(.semibold)
+                        Text(entry.date)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
+                        .rotationEffect(.degrees(expanded ? 90 : 0))
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+
+            if expanded {
+                VStack(alignment: .leading, spacing: 4) {
+                    ForEach(entry.items, id: \.self) { item in
+                        HStack(alignment: .top, spacing: 6) {
+                            Text("•")
+                                .foregroundStyle(.secondary)
+                            Text(item)
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+                .padding(.top, 8)
+            }
+        }
+        .padding(.vertical, 2)
     }
 }
