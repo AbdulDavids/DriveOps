@@ -165,6 +165,23 @@ struct DiagnosticsView: View {
 
 // MARK: - Previews
 
+#if DEBUG
+private func decodeCodes(_ json: String) -> [TroubleCode] {
+    (try? JSONDecoder().decode([TroubleCode].self, from: Data(json.utf8))) ?? []
+}
+
+private let mockTroubleCodes: [ECUID: [TroubleCode]] = [
+    .engine: decodeCodes("""
+        [
+            {"code":"P0420","description":"Catalyst System Efficiency Below Threshold (Bank 1)"},
+            {"code":"P0171","description":"System Too Lean (Bank 1)"}
+        ]
+        """),
+    .transmission: decodeCodes("""
+        [{"code":"P0700","description":"Transmission Control System Malfunction"}]
+        """),
+]
+
 #Preview("Not Connected") {
     DiagnosticsView(vm: .stub(state: .disconnected))
 }
@@ -190,19 +207,4 @@ struct DiagnosticsView: View {
         scanError: "Could not communicate with ECU. Try again."
     ))
 }
-
-private func decodeCodes(_ json: String) -> [TroubleCode] {
-    (try? JSONDecoder().decode([TroubleCode].self, from: Data(json.utf8))) ?? []
-}
-
-private let mockTroubleCodes: [ECUID: [TroubleCode]] = [
-    .engine: decodeCodes("""
-        [
-            {"code":"P0420","description":"Catalyst System Efficiency Below Threshold (Bank 1)"},
-            {"code":"P0171","description":"System Too Lean (Bank 1)"}
-        ]
-        """),
-    .transmission: decodeCodes("""
-        [{"code":"P0700","description":"Transmission Control System Malfunction"}]
-        """),
-]
+#endif

@@ -53,6 +53,7 @@ struct ContentView: View {
 
 // MARK: - Previews
 
+#if DEBUG
 private let previewInfo = try? JSONDecoder().decode(OBDInfo.self, from: Data(#"{"vin":"1HGBH41JXMN109186"}"#.utf8))
 
 private let previewLiveData: [String: String] = [
@@ -83,3 +84,4 @@ private let previewLiveData: [String: String] = [
 #Preview("Error") {
     ContentView(vm: .stub(state: .error, error: "Could not connect to adapter. Make sure it's paired in Bluetooth settings."))
 }
+#endif
