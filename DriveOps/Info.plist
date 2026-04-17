@@ -10,8 +10,7 @@
 	<array>
 		<string>bluetooth-central</string>
 		<string>fetch</string>
-		<string>location</string>
-		<string>nearby-interaction</string>
+<string>nearby-interaction</string>
 		<string>bluetooth-peripheral</string>
 	</array>
 </dict>
