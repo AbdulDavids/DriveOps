@@ -29,8 +29,9 @@ struct LiveDataCardView: View {
                 Button {
                     showGauges = true
                 } label: {
-                    Image(systemName: "gauge.open.with.lines.needle.33percent")
+                    Label("Gauges", systemImage: "gauge.open.with.lines.needle.33percent")
                         .font(.caption)
+                        .fontWeight(.semibold)
                 }
                 .buttonStyle(.bordered)
                 .controlSize(.mini)
@@ -95,18 +96,17 @@ struct LiveDataCardView: View {
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
         .frame(maxWidth: .infinity, alignment: .leading)
         .animation(.easeInOut(duration: 0.2), value: pinnedKeys)
-        .sheet(isPresented: $showCompare) {
+        .adaptivePresentation(isPresented: $showCompare) {
             let keys = Array(pinnedKeys).sorted()
             CompareSheet(
                 keys: keys,
                 histories: keys.reduce(into: [:]) { $0[$1] = metricHistory[$1] ?? [] }
             )
         }
-        .sheet(isPresented: $showGauges) {
-            let filteredData = pinnedKeys.isEmpty
-                ? liveData
-                : liveData.filter { pinnedKeys.contains($0.key) }
-            GaugeGridView(liveData: filteredData)
+        .adaptivePresentation(isPresented: $showGauges) {
+            let hasPins = !pinnedKeys.isEmpty
+            let filteredData = hasPins ? liveData.filter { pinnedKeys.contains($0.key) } : liveData
+            GaugeGridView(liveData: filteredData, fillScreen: hasPins)
         }
     }
 

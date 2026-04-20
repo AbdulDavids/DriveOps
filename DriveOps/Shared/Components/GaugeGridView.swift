@@ -7,8 +7,12 @@ import SwiftUI
 
 struct GaugeGridView: View {
     let liveData: [String: String]
+    // When true, cells fill the screen (pinned selection). When false, scrollable 2-col grid.
+    var fillScreen: Bool
 
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.horizontalSizeClass) private var hSizeClass
+    private var isWide: Bool { hSizeClass == .regular }
 
     private let colors: [Color] = [.accentColor, .orange, .green, .pink, .purple, .cyan, .mint, .red, .indigo, .yellow]
 
@@ -22,47 +26,86 @@ struct GaugeGridView: View {
 
     var body: some View {
         NavigationStack {
-            GeometryReader { geo in
-                let isLandscape = geo.size.width > geo.size.height
-                let cols = isLandscape ? sorted.count : 1
-                let rows = isLandscape ? 1 : sorted.count
-                let spacing: CGFloat = 12
-                let hPad: CGFloat = 16
-                let vPad: CGFloat = 16
-                let availW = geo.size.width - hPad * 2 - spacing * CGFloat(cols - 1)
-                let availH = geo.size.height - vPad * 2 - spacing * CGFloat(rows - 1)
-                let cellW = availW / CGFloat(cols)
-                let cellH = availH / CGFloat(rows)
-
-                let columns = Array(repeating: GridItem(.fixed(cellW), spacing: spacing), count: cols)
-
-                LazyVGrid(columns: columns, spacing: spacing) {
-                    ForEach(Array(sorted.enumerated()), id: \.element.key) { index, item in
-                        let current = parsed(item.value)
-                        let gMin = MetricGaugeDomain.min(for: item.key, observed: current)
-                        let gMax = MetricGaugeDomain.max(for: item.key, observed: current)
-                        BigGaugeCell(
-                            label: item.key,
-                            current: current,
-                            gaugeMin: gMin,
-                            gaugeMax: gMax,
-                            cellHeight: cellH,
-                            color: colors[index % colors.count]
-                        )
-                        .frame(width: cellW, height: cellH)
-                    }
-                }
-                .padding(.horizontal, hPad)
-                .padding(.vertical, vPad)
+            if fillScreen {
+                fillingLayout
+            } else {
+                scrollingGrid
             }
-            .navigationTitle("Gauges")
-            #if os(iOS)
-            .navigationBarTitleDisplayMode(.inline)
-            #endif
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }
+        }
+    }
+
+    // MARK: Fill screen (pinned selection, up to 4)
+    private var fillingLayout: some View {
+        GeometryReader { geo in
+            let isLandscape = geo.size.width > geo.size.height
+            let cols = isLandscape ? sorted.count : 1
+            let rows = isLandscape ? 1 : sorted.count
+            let spacing: CGFloat = 12
+            let hPad: CGFloat = 16
+            let vPad: CGFloat = 16
+            let availW = geo.size.width - hPad * 2 - spacing * CGFloat(cols - 1)
+            let availH = geo.size.height - vPad * 2 - spacing * CGFloat(rows - 1)
+            let cellW = availW / CGFloat(cols)
+            let cellH = availH / CGFloat(rows)
+            let columns = Array(repeating: GridItem(.fixed(cellW), spacing: spacing), count: cols)
+
+            LazyVGrid(columns: columns, spacing: spacing) {
+                ForEach(Array(sorted.enumerated()), id: \.element.key) { index, item in
+                    let current = parsed(item.value)
+                    BigGaugeCell(
+                        label: item.key,
+                        current: current,
+                        gaugeMin: MetricGaugeDomain.min(for: item.key, observed: current),
+                        gaugeMax: MetricGaugeDomain.max(for: item.key, observed: current),
+                        cellHeight: cellH,
+                        color: colors[index % colors.count]
+                    )
+                    .frame(width: cellW, height: cellH)
                 }
+            }
+            .padding(.horizontal, hPad)
+            .padding(.vertical, vPad)
+        }
+        .navigationTitle("Gauges")
+        #if os(iOS)
+        .navigationBarTitleDisplayMode(.inline)
+        #endif
+        .toolbar {
+            ToolbarItem(placement: .confirmationAction) {
+                Button("Done") { dismiss() }
+            }
+        }
+    }
+
+    // MARK: Scrollable grid (all metrics) — 3 cols on iPad, 2 on phone
+    private var scrollingGrid: some View {
+        let colCount = isWide ? 3 : 2
+        let cellHeight: CGFloat = isWide ? 240 : 180
+        let columns = Array(repeating: GridItem(.flexible(), spacing: 12), count: colCount)
+        return ScrollView {
+            LazyVGrid(columns: columns, spacing: 12) {
+                ForEach(Array(sorted.enumerated()), id: \.element.key) { index, item in
+                    let current = parsed(item.value)
+                    BigGaugeCell(
+                        label: item.key,
+                        current: current,
+                        gaugeMin: MetricGaugeDomain.min(for: item.key, observed: current),
+                        gaugeMax: MetricGaugeDomain.max(for: item.key, observed: current),
+                        cellHeight: cellHeight,
+                        color: colors[index % colors.count]
+                    )
+                    .frame(height: cellHeight)
+                }
+            }
+            .padding(16)
+        }
+        .navigationTitle("Gauges")
+        #if os(iOS)
+        .navigationBarTitleDisplayMode(.inline)
+        #endif
+        .toolbar {
+            ToolbarItem(placement: .confirmationAction) {
+                Button("Done") { dismiss() }
             }
         }
     }

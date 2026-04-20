@@ -218,9 +218,8 @@ class OBDViewModel: ObservableObject {
     }
 }
 
-// MARK: - Debug Stubs
+// MARK: - Preview Stubs
 
-#if DEBUG
 extension OBDViewModel {
     static func stub(
         state: ConnectionState,
@@ -242,4 +241,3 @@ extension OBDViewModel {
         return vm
     }
 }
-#endif

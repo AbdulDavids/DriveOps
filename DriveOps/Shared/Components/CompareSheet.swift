@@ -50,12 +50,16 @@ struct CompareSheet: View {
         seriesColors[(keys.firstIndex(of: key) ?? 0) % seriesColors.count]
     }
 
+    @Environment(\.horizontalSizeClass) private var hSizeClass
+    private var isWide: Bool { hSizeClass == .regular }
+
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 20) {
-                    // Circular gauges
-                    let columns = Array(repeating: GridItem(.flexible(), spacing: 12), count: min(keys.count, 4))
+                    // Circular gauges — more columns on iPad
+                    let colCount = isWide ? keys.count : min(keys.count, 4)
+                    let columns = Array(repeating: GridItem(.flexible(), spacing: 12), count: colCount)
                     LazyVGrid(columns: columns, spacing: 12) {
                         ForEach(keys, id: \.self) { key in
                             let s = stats(key)
@@ -71,78 +75,8 @@ struct CompareSheet: View {
                         }
                     }
 
-                    // Overlaid chart
-                    Chart(points) { pt in
-                        LineMark(
-                            x: .value("Time", pt.timestamp),
-                            y: .value("Value", pt.normValue)
-                        )
-                        .foregroundStyle(by: .value("Metric", pt.series))
-                        .interpolationMethod(.catmullRom)
-                    }
-                    .chartForegroundStyleScale(
-                        domain: keys,
-                        range: keys.map { color(for: $0) }
-                    )
-                    .chartLegend(position: .top, alignment: .leading)
-                    .chartYAxis {
-                        AxisMarks(values: [0.0, 0.5, 1.0]) { val in
-                            AxisGridLine()
-                            AxisValueLabel {
-                                if let d = val.as(Double.self) {
-                                    Text(d == 0 ? "Low" : d == 1 ? "High" : "Mid")
-                                        .font(.caption2)
-                                        .foregroundStyle(.secondary)
-                                }
-                            }
-                        }
-                    }
-                    .chartXAxis {
-                        AxisMarks(values: .stride(by: .second, count: 30)) { _ in
-                            AxisGridLine()
-                            AxisValueLabel(format: .dateTime.minute().second())
-                        }
-                    }
-                    .frame(height: 300)
-                    .padding(.horizontal, 4)
-
-                    // Stats table
-                    VStack(spacing: 0) {
-                        HStack {
-                            Text("")
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                            ForEach(keys, id: \.self) { key in
-                                Text(key)
-                                    .font(.caption.bold())
-                                    .foregroundStyle(color(for: key))
-                                    .lineLimit(1)
-                                    .minimumScaleFactor(0.6)
-                                    .frame(maxWidth: .infinity, alignment: .center)
-                            }
-                        }
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 8)
-
-                        ForEach(["Current", "Min", "Max"], id: \.self) { stat in
-                            Divider()
-                            HStack {
-                                Text(stat)
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                ForEach(keys, id: \.self) { key in
-                                    let s = stats(key)
-                                    let val = stat == "Current" ? s.current : stat == "Min" ? s.min : s.max
-                                    Text(String(format: "%.1f", val))
-                                        .font(.caption.monospacedDigit())
-                                        .frame(maxWidth: .infinity, alignment: .center)
-                                }
-                            }
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 8)
-                        }
-                    }
-                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
+                    overlaidChart(height: isWide ? 460 : 300)
+                    statsTable
                 }
                 .padding()
             }
@@ -156,6 +90,77 @@ struct CompareSheet: View {
                 }
             }
         }
+    }
+
+    private func overlaidChart(height: CGFloat) -> some View {
+        Chart(points) { pt in
+            LineMark(x: .value("Time", pt.timestamp), y: .value("Value", pt.normValue))
+                .foregroundStyle(by: .value("Metric", pt.series))
+                .interpolationMethod(.catmullRom)
+        }
+        .chartForegroundStyleScale(domain: keys, range: keys.map { color(for: $0) })
+        .chartLegend(position: .top, alignment: .leading)
+        .chartYAxis {
+            AxisMarks(values: [0.0, 0.5, 1.0]) { val in
+                AxisGridLine()
+                AxisValueLabel {
+                    if let d = val.as(Double.self) {
+                        Text(d == 0 ? "Low" : d == 1 ? "High" : "Mid")
+                            .font(.caption2).foregroundStyle(.secondary)
+                    }
+                }
+            }
+        }
+        .chartXAxis {
+            AxisMarks(values: .stride(by: .second, count: 30)) { _ in
+                AxisGridLine()
+                AxisValueLabel(format: .dateTime.minute().second())
+            }
+        }
+        .frame(height: height)
+        .padding(.horizontal, 4)
+    }
+
+    private var statsTable: some View {
+        VStack(spacing: 0) {
+            // Header row
+            HStack(spacing: 0) {
+                Text("")
+                    .frame(width: 80, alignment: .leading)
+                ForEach(keys, id: \.self) { key in
+                    Text(key)
+                        .font(.subheadline.bold())
+                        .foregroundStyle(color(for: key))
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.7)
+                        .multilineTextAlignment(.center)
+                        .frame(maxWidth: .infinity, alignment: .center)
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+
+            ForEach(["Current", "Min", "Max"], id: \.self) { stat in
+                Divider()
+                HStack(spacing: 0) {
+                    Text(stat)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .frame(width: 80, alignment: .leading)
+                    ForEach(keys, id: \.self) { key in
+                        let s = stats(key)
+                        let val = stat == "Current" ? s.current : stat == "Min" ? s.min : s.max
+                        Text(String(format: "%.1f", val))
+                            .font(.system(.title3, design: .rounded).bold().monospacedDigit())
+                            .foregroundStyle(stat == "Current" ? color(for: key) : .primary)
+                            .frame(maxWidth: .infinity, alignment: .center)
+                    }
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 14)
+            }
+        }
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14))
     }
 }
 

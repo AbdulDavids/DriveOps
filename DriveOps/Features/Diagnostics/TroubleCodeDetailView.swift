@@ -103,19 +103,12 @@ struct TroubleCodeDetailView: View {
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             } else {
-                AIGeneratingText(
-                    generatedText: explanation.isEmpty ? nil : explanation,
-                    isGenerating: isGenerating,
-                    lineCount: 4,
-                    lineHeight: 12,
-                    lineSpacing: 8,
-                    cornerRadius: 6
-                )
-                .font(.subheadline)
-                .foregroundStyle(.primary)
-                .fixedSize(horizontal: false, vertical: true)
-                .if(isGenerating && !explanation.isEmpty) { $0.textGlow() }
-                .padding(.vertical, 4)
+                Text(explanation)
+                    .font(.subheadline)
+                    .foregroundStyle(explanation.isEmpty ? .tertiary : .primary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.vertical, 4)
+                    .animation(.easeIn(duration: 0.15), value: explanation)
             }
         } header: {
             Text("Mechanic")
