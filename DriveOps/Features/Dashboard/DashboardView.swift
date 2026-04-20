@@ -19,24 +19,14 @@ struct DashboardView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 20) {
-                    if isWide {
-                        HStack(alignment: .top, spacing: 20) {
-                            ConnectionCardView(vm: vm, showWifiSheet: $showWifiSheet, showBTSheet: $showBTSheet)
-                                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
-                            if let info = vm.obdInfo {
-                                VehicleInfoCardView(info: info)
-                                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-                            }
-                        }
-                    } else {
-                        ConnectionCardView(vm: vm, showWifiSheet: $showWifiSheet, showBTSheet: $showBTSheet)
-                        if let info = vm.obdInfo {
-                            VehicleInfoCardView(info: info)
-                        }
-                    }
+                    ConnectionCardView(vm: vm, showWifiSheet: $showWifiSheet, showBTSheet: $showBTSheet)
 
                     if !vm.liveData.isEmpty {
-                        LiveDataCardView(liveData: vm.liveData, isWide: isWide)
+                        LiveDataCardView(liveData: vm.liveData, metricHistory: vm.metricHistory, isWide: isWide)
+                    }
+
+                    if let info = vm.obdInfo {
+                        VehicleInfoCardView(info: info)
                     }
 
                     if vm.connectionState == .disconnected && !vm.isConnecting {

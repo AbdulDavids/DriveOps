@@ -13,29 +13,31 @@ struct ConnectionCardView: View {
 
     var body: some View {
         VStack(spacing: 12) {
-            HStack {
+            HStack(spacing: 10) {
                 Circle()
                     .fill(vm.statusColor)
                     .frame(width: 10, height: 10)
                 Text(vm.statusLabel)
                     .font(.subheadline)
                 Spacer()
+
+                if vm.isConnecting {
+                    Button(action: { vm.cancelConnection() }) {
+                        Label("Cancel", systemImage: "xmark.circle.fill")
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.red)
+                    .controlSize(.small)
+                } else if vm.connectionState == .connectedToVehicle {
+                    Button("Disconnect", role: .destructive) {
+                        vm.disconnect()
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                }
             }
 
-            if vm.isConnecting {
-                Button(action: { vm.cancelConnection() }) {
-                    Label("Cancel", systemImage: "xmark.circle.fill")
-                        .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.borderedProminent)
-                .tint(.red)
-            } else if vm.connectionState == .connectedToVehicle {
-                Button("Disconnect", role: .destructive) {
-                    vm.disconnect()
-                }
-                .buttonStyle(.bordered)
-                .frame(maxWidth: .infinity)
-            } else {
+            if vm.connectionState != .connectedToVehicle && !vm.isConnecting {
                 HStack(spacing: 12) {
                     Button(action: { showBTSheet = true }) {
                         Label("Bluetooth", systemImage: "dot.radiowaves.left.and.right")
@@ -58,7 +60,6 @@ struct ConnectionCardView: View {
                 .font(.caption2)
                 .foregroundStyle(.secondary)
             #endif
-            Spacer(minLength: 0)
         }
         .padding()
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
