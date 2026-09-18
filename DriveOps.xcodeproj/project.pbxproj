@@ -218,7 +218,7 @@
 			mainGroup = 962FAE452F73AF60008D4207;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				9661CECD2F7510F600B851E8 /* XCRemoteSwiftPackageReference "SwiftOBD2" */,
+				9661CECD2F7510F600B851E8 /* XCRemoteSwiftPackageReference "EVMSwiftOBD2" */,
 				961B06672F96DA31004A2A7C /* XCRemoteSwiftPackageReference "AppleIntelligenceForSwiftUI" */,
 			);
 			preferredProjectObjectVersion = 77;
@@ -667,7 +667,7 @@
 				kind = branch;
 			};
 		};
-		9661CECD2F7510F600B851E8 /* XCRemoteSwiftPackageReference "SwiftOBD2" */ = {
+		9661CECD2F7510F600B851E8 /* XCRemoteSwiftPackageReference "EVMSwiftOBD2" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/valexa/EVMSwiftOBD2.git";
 			requirement = {
@@ -685,7 +685,7 @@
 		};
 		9661CECE2F7510F600B851E8 /* SwiftOBD2 */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 9661CECD2F7510F600B851E8 /* XCRemoteSwiftPackageReference "SwiftOBD2" */;
+			package = 9661CECD2F7510F600B851E8 /* XCRemoteSwiftPackageReference "EVMSwiftOBD2" */;
 			productName = SwiftOBD2;
 		};
 /* End XCSwiftPackageProductDependency section */

@@ -5,12 +5,14 @@
 
 import Foundation
 import SwiftOBD2
+import os
 
 extension OBDViewModel {
     func scanTroubleCodes() {
         isScanningCodes = true
         troubleCodes = [:]
         scanError = nil
+        log("DTC scan started (\(activeConnectionType?.rawValue ?? "unknown"))")
 
         if activeConnectionType == .demo {
             Task {
@@ -18,7 +20,7 @@ extension OBDViewModel {
                 self.troubleCodes = Self.demoDTCs
                 self.isScanningCodes = false
                 let total = Self.demoDTCs.values.map(\.count).reduce(0, +)
-                self.log("DTC scan: \(total) code(s) found")
+                self.log("DTC scan: \(total) code(s) found across \(Self.demoDTCs.count) ECU(s)")
             }
             return
         }
@@ -29,17 +31,22 @@ extension OBDViewModel {
             return
         }
 
+        let startedAt = Date()
         Task {
             do {
                 let result = try await service.scanForTroubleCodes()
+                let elapsed = Date().timeIntervalSince(startedAt)
                 self.troubleCodes = result
                 self.isScanningCodes = false
                 let total = result.values.map(\.count).reduce(0, +)
-                self.log("DTC scan: \(total) code(s) found")
+                self.log("DTC scan: \(total) code(s) found across \(result.count) ECU(s) in \(String(format: "%.2f", elapsed))s")
+                AppLogger.diagnostics.info("scanForTroubleCodes total=\(total) ecus=\(result.count) elapsed=\(elapsed, format: .fixed(precision: 2))s")
             } catch {
+                let elapsed = Date().timeIntervalSince(startedAt)
                 self.scanError = error.localizedDescription
                 self.isScanningCodes = false
-                self.log("DTC scan failed: \(error.localizedDescription)")
+                self.log("DTC scan failed after \(String(format: "%.2f", elapsed))s: \(error.localizedDescription)")
+                AppLogger.diagnostics.error("scanForTroubleCodes failed elapsed=\(elapsed, format: .fixed(precision: 2))s error=\(String(describing: error), privacy: .public)")
             }
         }
     }
@@ -70,18 +77,25 @@ extension OBDViewModel {
     }()
 
     func clearTroubleCodes() {
-        guard let service = activeService else { return }
+        guard let service = activeService else {
+            log("Diagnostics: clear requested but not connected")
+            return
+        }
+        let previousCount = troubleCodes.values.map(\.count).reduce(0, +)
+        log("Clearing \(previousCount) DTC(s)…")
         isScanningCodes = true
         Task {
             do {
                 try await service.clearTroubleCodes()
                 self.troubleCodes = [:]
                 self.isScanningCodes = false
-                self.log("DTCs cleared")
+                self.log("DTCs cleared (\(previousCount) removed)")
+                AppLogger.diagnostics.info("clearTroubleCodes success cleared=\(previousCount)")
             } catch {
                 self.scanError = error.localizedDescription
                 self.isScanningCodes = false
                 self.log("DTC clear failed: \(error.localizedDescription)")
+                AppLogger.diagnostics.error("clearTroubleCodes failed error=\(String(describing: error), privacy: .public)")
             }
         }
     }
