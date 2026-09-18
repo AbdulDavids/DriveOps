@@ -192,8 +192,8 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
-				LastSwiftUpdateCheck = 2620;
-				LastUpgradeCheck = 2620;
+				LastSwiftUpdateCheck = 2720;
+				LastUpgradeCheck = 2720;
 				TargetAttributes = {
 					962FAE4D2F73AF60008D4207 = {
 						CreatedOnToolsVersion = 26.2;
@@ -218,7 +218,7 @@
 			mainGroup = 962FAE452F73AF60008D4207;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				9661CECD2F7510F600B851E8 /* XCRemoteSwiftPackageReference "SwiftOBD2" */,
+				9661CECD2F7510F600B851E8 /* XCRemoteSwiftPackageReference "EVMSwiftOBD2" */,
 				961B06672F96DA31004A2A7C /* XCRemoteSwiftPackageReference "AppleIntelligenceForSwiftUI" */,
 			);
 			preferredProjectObjectVersion = 77;
@@ -416,7 +416,6 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = DriveOps/DriveOps.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
@@ -468,7 +467,6 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = DriveOps/DriveOps.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
@@ -667,11 +665,11 @@
 				kind = branch;
 			};
 		};
-		9661CECD2F7510F600B851E8 /* XCRemoteSwiftPackageReference "SwiftOBD2" */ = {
+		9661CECD2F7510F600B851E8 /* XCRemoteSwiftPackageReference "EVMSwiftOBD2" */ = {
 			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/kkonteh97/SwiftOBD2.git";
+			repositoryURL = "https://github.com/valexa/EVMSwiftOBD2.git";
 			requirement = {
-				branch = main;
+				branch = develop;
 				kind = branch;
 			};
 		};
@@ -685,7 +683,7 @@
 		};
 		9661CECE2F7510F600B851E8 /* SwiftOBD2 */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 9661CECD2F7510F600B851E8 /* XCRemoteSwiftPackageReference "SwiftOBD2" */;
+			package = 9661CECD2F7510F600B851E8 /* XCRemoteSwiftPackageReference "EVMSwiftOBD2" */;
 			productName = SwiftOBD2;
 		};
 /* End XCSwiftPackageProductDependency section */

@@ -207,32 +207,4 @@ private let mockTroubleCodes: [ECUID: [TroubleCode]] = [
         scanError: "Could not communicate with ECU. Try again."
     ))
 }
-
-private func decodeCodes(_ json: String) -> [TroubleCode] {
-    (try? JSONDecoder().decode([TroubleCode].self, from: Data(json.utf8))) ?? []
-}
-
-private let mockTroubleCodes: [ECUID: [TroubleCode]] = [
-    .engine: decodeCodes("""
-        [
-            {"code":"P0171","description":"System Too Lean (Bank 1)"},
-            {"code":"P0300","description":"Random/Multiple Cylinder Misfire Detected"},
-            {"code":"P0420","description":"Catalyst System Efficiency Below Threshold (Bank 1)"},
-            {"code":"P0442","description":"Evaporative Emission System Leak Detected (Small Leak)"},
-            {"code":"P0128","description":"Coolant Temperature Below Thermostat Regulating Temperature"}
-        ]
-        """),
-    .transmission: decodeCodes("""
-        [
-            {"code":"P0700","description":"Transmission Control System Malfunction"},
-            {"code":"P0741","description":"Torque Converter Clutch Circuit Performance or Stuck Off"}
-        ]
-        """),
-    .unknown: decodeCodes("""
-        [
-            {"code":"C0035","description":"Left Front Wheel Speed Sensor Circuit"},
-            {"code":"U0100","description":"Lost Communication With ECM/PCM"},
-            {"code":"U0207","description":"Lost Communication With Hybrid Battery Control Module"}
-        ]
-        """),
-]
+#endif
