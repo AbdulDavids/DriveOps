@@ -15,6 +15,7 @@ class OBDViewModel: ObservableObject {
     @Published var connectionState: ConnectionState = .disconnected
     @Published var obdInfo: OBDInfo?
     @Published var liveData: [String: String] = [:]
+    @Published var metricHistory: [String: [MetricSample]] = [:]
     @Published var errorMessage: String?
     @Published var isConnecting = false
     @Published var activeConnectionType: ConnectionType?
@@ -23,9 +24,11 @@ class OBDViewModel: ObservableObject {
     @Published var isScanningCodes = false
     @Published var scanError: String?
 
+    private let historyLimit = 120
     private var cancellables = Set<AnyCancellable>()
     private var connectTask: Task<Void, Never>?
     private var pollTask: Task<Void, Never>?
+    private let simulator = DrivingSimulator()
 
     init(bindServiceState: Bool = true) {
         if bindServiceState {
@@ -53,7 +56,7 @@ class OBDViewModel: ObservableObject {
     }
 
     func connectDemo() {
-        startConnecting(type: .demo, service: OBDService(connectionType: .demo))
+        startConnectingDemo()
     }
 
     func cancelConnection() {
@@ -65,6 +68,7 @@ class OBDViewModel: ObservableObject {
         isConnecting = false
         activeConnectionType = nil
         connectionState = .disconnected
+        metricHistory = [:]
     }
 
     func disconnect() {
@@ -77,6 +81,7 @@ class OBDViewModel: ObservableObject {
         activeConnectionType = nil
         obdInfo = nil
         liveData = [:]
+        metricHistory = [:]
     }
 
     private func startConnecting(type: ConnectionType, service: OBDService) {
@@ -97,6 +102,33 @@ class OBDViewModel: ObservableObject {
             } catch {
                 guard !Task.isCancelled else { return }
                 self.log("\(type.rawValue) connection failed: \(error.localizedDescription)")
+                self.errorMessage = error.localizedDescription
+                self.isConnecting = false
+                self.activeConnectionType = nil
+                self.connectTask = nil
+            }
+        }
+    }
+
+    private func startConnectingDemo() {
+        let service = OBDService(connectionType: .demo)
+        isConnecting = true
+        activeConnectionType = .demo
+        errorMessage = nil
+        log("Connecting via demo…")
+        bind(service)
+        connectTask = Task {
+            do {
+                let info = try await service.startConnection()
+                guard !Task.isCancelled else { return }
+                self.obdInfo = info
+                self.isConnecting = false
+                self.connectTask = nil
+                self.log("Connected via demo (simulated driving cycle)")
+                self.startSimulatedPoll()
+            } catch {
+                guard !Task.isCancelled else { return }
+                self.log("demo connection failed: \(error.localizedDescription)")
                 self.errorMessage = error.localizedDescription
                 self.isConnecting = false
                 self.activeConnectionType = nil
@@ -137,11 +169,20 @@ class OBDViewModel: ObservableObject {
                 do {
                     let results = try await service.requestPIDs(pids, unit: .metric)
                     if results.isEmpty { self.log("⚠️ Empty batch") }
+                    let now = Date()
                     var updated = self.liveData
+                    var updatedHistory = self.metricHistory
                     for (cmd, measurement): (OBDCommand, MeasurementResult) in results {
-                        updated[cmd.properties.description] = "\((measurement.value * 10).rounded() / 10) \(measurement.unit.symbol)"
+                        let key = cmd.properties.description
+                        updated[key] = "\((measurement.value * 10).rounded() / 10) \(measurement.unit.symbol)"
+                        let sample = MetricSample(timestamp: now, value: measurement.value)
+                        var history = updatedHistory[key] ?? []
+                        history.append(sample)
+                        if history.count > self.historyLimit { history.removeFirst() }
+                        updatedHistory[key] = history
                     }
                     self.liveData = updated
+                    self.metricHistory = updatedHistory
                 } catch {
                     if !Task.isCancelled {
                         self.log("Poll error: \(error.localizedDescription)")
@@ -153,11 +194,32 @@ class OBDViewModel: ObservableObject {
             }
         }
     }
+    private func startSimulatedPoll() {
+        log("Starting simulated poll…")
+        pollTask = Task {
+            while !Task.isCancelled {
+                let readings = self.simulator.tick()
+                let now = Date()
+                var updated = self.liveData
+                var updatedHistory = self.metricHistory
+                for (key, reading) in readings {
+                    updated[key] = "\((reading.value * 10).rounded() / 10) \(reading.unit)"
+                    let sample = MetricSample(timestamp: now, value: reading.value)
+                    var history = updatedHistory[key] ?? []
+                    history.append(sample)
+                    if history.count > self.historyLimit { history.removeFirst() }
+                    updatedHistory[key] = history
+                }
+                self.liveData = updated
+                self.metricHistory = updatedHistory
+                try? await Task.sleep(nanoseconds: 300_000_000)
+            }
+        }
+    }
 }
 
-// MARK: - Debug Stubs
+// MARK: - Preview Stubs
 
-#if DEBUG
 extension OBDViewModel {
     static func stub(
         state: ConnectionState,
@@ -179,4 +241,3 @@ extension OBDViewModel {
         return vm
     }
 }
-#endif
