@@ -17,6 +17,19 @@ private struct ChangelogEntry: Identifiable {
 
 private let changelog: [ChangelogEntry] = [
     ChangelogEntry(
+        version: "0.2.7",
+        date: "Apr 2026",
+        items: [
+            "Metric history graphs with sparklines on dashboard",
+            "Tap any metric to view full chart with min/max/current",
+            "Apple Intelligence on-device code explanations (Mechanic)",
+            "Realistic simulated driving cycle in demo mode",
+            "More DTC codes in demo mode",
+            "AI chat provider picker — ChatGPT, Claude, Gemini, Mistral",
+            "On-device AI toggle and model selector in Settings",
+        ]
+    ),
+    ChangelogEntry(
         version: "0.2.6",
         date: "Apr 2026",
         items: [
@@ -59,6 +72,8 @@ private let changelog: [ChangelogEntry] = [
 
 struct SettingsView: View {
     @ObservedObject var vm: OBDViewModel
+    @AppStorage("aiChatProvider") private var providerRaw: String = AIChatProvider.chatgpt.rawValue
+    @AppStorage("onDeviceAIEnabled") private var onDeviceAIEnabled: Bool = true
 
     private var appVersion: String {
         let v = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "?"
@@ -90,6 +105,23 @@ struct SettingsView: View {
                 Section("Connection") {
                     Button("Demo Mode") { vm.connectDemo() }
                         .disabled(vm.isConnecting || vm.connectionState == .connectedToVehicle)
+                }
+
+                // Diagnostics
+                Section {
+                    Picker("AI Chat Provider", selection: $providerRaw) {
+                        ForEach(AIChatProvider.allCases) { p in
+                            Text(p.displayName).tag(p.rawValue)
+                        }
+                    }
+                    Toggle("On-Device AI", isOn: $onDeviceAIEnabled)
+                } header: {
+                    Text("Diagnostics")
+                } footer: {
+                    Text(onDeviceAIEnabled
+                         ? "On-device Apple Intelligence explains codes as you open them."
+                         : "On-device AI is off. Use \"Ask…\" to open an external provider.")
+                        .font(.caption)
                 }
 
                 // Changelog
@@ -134,13 +166,13 @@ private struct WelcomeCard: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Welcome to DriveOps")
                         .font(.headline)
-                    Text("by Abdul Baari Davids")
+                    Text("by Abdul Davids")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
             }
 
-            Text("A real-time OBD2 diagnostics app for iOS. Connect via Bluetooth or Wi-Fi to your adapter and get live sensor data, trouble codes, and vehicle info — right on your phone.")
+            Text("A real-time OBD2 diagnostics app for iOS. ")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)

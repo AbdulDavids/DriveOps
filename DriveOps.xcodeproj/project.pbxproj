@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		961B06682F96DA31004A2A7C /* AppleIntelligenceForSwiftUI in Frameworks */ = {isa = PBXBuildFile; productRef = 961B06692F96DA31004A2A7C /* AppleIntelligenceForSwiftUI */; };
 		9661CECF2F7510F600B851E8 /* SwiftOBD2 in Frameworks */ = {isa = PBXBuildFile; productRef = 9661CECE2F7510F600B851E8 /* SwiftOBD2 */; };
 /* End PBXBuildFile section */
 
@@ -70,6 +71,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				9661CECF2F7510F600B851E8 /* SwiftOBD2 in Frameworks */,
+				961B06682F96DA31004A2A7C /* AppleIntelligenceForSwiftUI in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -131,6 +133,7 @@
 			name = DriveOps;
 			packageProductDependencies = (
 				9661CECE2F7510F600B851E8 /* SwiftOBD2 */,
+				961B06692F96DA31004A2A7C /* AppleIntelligenceForSwiftUI */,
 			);
 			productName = DriveOps;
 			productReference = 962FAE4E2F73AF60008D4207 /* DriveOps.app */;
@@ -216,6 +219,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				9661CECD2F7510F600B851E8 /* XCRemoteSwiftPackageReference "SwiftOBD2" */,
+				961B06672F96DA31004A2A7C /* XCRemoteSwiftPackageReference "AppleIntelligenceForSwiftUI" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 962FAE4F2F73AF60008D4207 /* Products */;
@@ -435,13 +439,12 @@
 				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphoneos*]" = UIStatusBarStyleDefault;
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 26.2;
-				MARKETING_VERSION = 0.2.6;
+				MARKETING_VERSION = 0.2.7;
 				PRODUCT_BUNDLE_IDENTIFIER = abduldavids.DriveOps;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -488,13 +491,12 @@
 				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphoneos*]" = UIStatusBarStyleDefault;
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 26.2;
-				MARKETING_VERSION = 0.2.6;
+				MARKETING_VERSION = 0.2.7;
 				PRODUCT_BUNDLE_IDENTIFIER = abduldavids.DriveOps;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -657,6 +659,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		961B06672F96DA31004A2A7C /* XCRemoteSwiftPackageReference "AppleIntelligenceForSwiftUI" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/alessiorubicini/AppleIntelligenceForSwiftUI.git";
+			requirement = {
+				branch = main;
+				kind = branch;
+			};
+		};
 		9661CECD2F7510F600B851E8 /* XCRemoteSwiftPackageReference "SwiftOBD2" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/kkonteh97/SwiftOBD2.git";
@@ -668,6 +678,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		961B06692F96DA31004A2A7C /* AppleIntelligenceForSwiftUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 961B06672F96DA31004A2A7C /* XCRemoteSwiftPackageReference "AppleIntelligenceForSwiftUI" */;
+			productName = AppleIntelligenceForSwiftUI;
+		};
 		9661CECE2F7510F600B851E8 /* SwiftOBD2 */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 9661CECD2F7510F600B851E8 /* XCRemoteSwiftPackageReference "SwiftOBD2" */;

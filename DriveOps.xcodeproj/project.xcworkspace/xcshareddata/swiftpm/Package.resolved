@@ -1,6 +1,15 @@
 {
-  "originHash" : "2500ddf300e2ae11fe2abb60d6696228738d2b033b86d28ac20b7d84f37bdc6e",
+  "originHash" : "39b555b7e4b3f393af74181aa4d8ebec6559845078e492cbb41bf42edd11c22f",
   "pins" : [
+    {
+      "identity" : "appleintelligenceforswiftui",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/alessiorubicini/AppleIntelligenceForSwiftUI.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "a90d67baf85874b40983d83fc998ddb8c5af6f0e"
+      }
+    },
     {
       "identity" : "swiftobd2",
       "kind" : "remoteSourceControl",
