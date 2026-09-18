@@ -24,7 +24,9 @@ Plug in an ELM327 adapter, pair it over Bluetooth or Wi-Fi, and DriveOps reads y
 
 ## How it works
 
-DriveOps talks to the adapter over the [SwiftOBD2](https://github.com/kkonteh97/SwiftOBD2) library, which implements the ELM327 command set and OBD2 PID decoding. `OBDViewModel` owns the connection lifecycle, polls live data, and publishes it to the UI via Combine.
+DriveOps talks to the adapter over [EVMSwiftOBD2](https://github.com/valexa/EVMSwiftOBD2) (`develop` branch), a fork of the original SwiftOBD2 library that implements the ELM327 command set and OBD2 PID decoding. `OBDViewModel` owns the connection lifecycle, polls live data, and publishes it to the UI via Combine.
+
+Demo mode does not go through the library at all. EVMSwiftOBD2 only serves mock data when the app runs in the iOS Simulator, so on a real device DriveOps drives demo mode with its own `DrivingSimulator`, feeding the same live-data pipeline the real adapter uses.
 
 <p align="center">
   <img src="docs/images/diagnostics-demo.png" alt="Diagnostics view showing trouble codes" width="60%">
@@ -40,7 +42,7 @@ The plain-English explanations don't call out to an API from the app. Instead, D
 ## Getting started
 
 1. Clone the repo and open `DriveOps.xcodeproj` in Xcode.
-2. Let Swift Package Manager resolve the dependencies ([SwiftOBD2](https://github.com/kkonteh97/SwiftOBD2) and [AppleIntelligenceForSwiftUI](https://github.com/alessiorubicini/AppleIntelligenceForSwiftUI)).
+2. Let Swift Package Manager resolve the dependencies ([EVMSwiftOBD2](https://github.com/valexa/EVMSwiftOBD2) and [AppleIntelligenceForSwiftUI](https://github.com/alessiorubicini/AppleIntelligenceForSwiftUI)).
 3. Build and run on a device or simulator. Use **Try Demo Mode** on the connection screen if you don't have an adapter paired.
 
 ## Project structure
@@ -61,4 +63,4 @@ DriveOps/
 
 ## Known issues
 
-There's an open bug report against the upstream SwiftOBD2 mock data manager (crash on `fuelLevel`, missing `controlModuleVoltage`) tracked in `swiftobd2-bug-report.md`, with a fix pending as a PR to the upstream repo.
+The mock data manager bugs tracked in `swiftobd2-bug-report.md` (crash on `fuelLevel`, missing `controlModuleVoltage`) also exist upstream in EVMSwiftOBD2, since it inherited that code from the original SwiftOBD2. `OBDViewModel` works around both by excluding those two PIDs from the live-data poll.

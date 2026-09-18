@@ -669,9 +669,9 @@
 		};
 		9661CECD2F7510F600B851E8 /* XCRemoteSwiftPackageReference "SwiftOBD2" */ = {
 			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/kkonteh97/SwiftOBD2.git";
+			repositoryURL = "https://github.com/valexa/EVMSwiftOBD2.git";
 			requirement = {
-				branch = main;
+				branch = develop;
 				kind = branch;
 			};
 		};

@@ -7,6 +7,15 @@ import Foundation
 import Combine
 import SwiftOBD2
 
+/// The connection the UI is showing, layered over the library's `ConnectionType`
+/// (`.bluetooth` / `.wifi`) to add `.demo`, which never touches `OBDService` —
+/// demo mode runs entirely on the local `DrivingSimulator`.
+enum AppConnectionType: String {
+    case bluetooth = "Bluetooth"
+    case wifi = "Wi-Fi"
+    case demo = "Demo"
+}
+
 @MainActor
 class OBDViewModel: ObservableObject {
     private let bluetoothService = OBDService(connectionType: .bluetooth)
@@ -18,7 +27,7 @@ class OBDViewModel: ObservableObject {
     @Published var metricHistory: [String: [MetricSample]] = [:]
     @Published var errorMessage: String?
     @Published var isConnecting = false
-    @Published var activeConnectionType: ConnectionType?
+    @Published var activeConnectionType: AppConnectionType?
     @Published var logs: [String] = []
     @Published var troubleCodes: [ECUID: [TroubleCode]] = [:]
     @Published var isScanningCodes = false
@@ -84,7 +93,7 @@ class OBDViewModel: ObservableObject {
         metricHistory = [:]
     }
 
-    private func startConnecting(type: ConnectionType, service: OBDService) {
+    private func startConnecting(type: AppConnectionType, service: OBDService) {
         isConnecting = true
         activeConnectionType = type
         errorMessage = nil
@@ -110,30 +119,22 @@ class OBDViewModel: ObservableObject {
         }
     }
 
+    // Demo mode never touches OBDService — it runs the local DrivingSimulator directly,
+    // since the library only ships mock data behind #if targetEnvironment(simulator),
+    // with no runtime-selectable demo connection type to request it on a real device.
     private func startConnectingDemo() {
-        let service = OBDService(connectionType: .demo)
         isConnecting = true
         activeConnectionType = .demo
         errorMessage = nil
         log("Connecting via demo…")
-        bind(service)
         connectTask = Task {
-            do {
-                let info = try await service.startConnection()
-                guard !Task.isCancelled else { return }
-                self.obdInfo = info
-                self.isConnecting = false
-                self.connectTask = nil
-                self.log("Connected via demo (simulated driving cycle)")
-                self.startSimulatedPoll()
-            } catch {
-                guard !Task.isCancelled else { return }
-                self.log("demo connection failed: \(error.localizedDescription)")
-                self.errorMessage = error.localizedDescription
-                self.isConnecting = false
-                self.activeConnectionType = nil
-                self.connectTask = nil
-            }
+            try? await Task.sleep(nanoseconds: 400_000_000)
+            guard !Task.isCancelled else { return }
+            self.isConnecting = false
+            self.connectTask = nil
+            self.connectionState = .connectedToVehicle
+            self.log("Connected via demo (simulated driving cycle)")
+            self.startSimulatedPoll()
         }
     }
 

@@ -8,10 +8,6 @@ import SwiftOBD2
 
 extension OBDViewModel {
     func scanTroubleCodes() {
-        guard let service = activeService else {
-            log("Diagnostics: not connected")
-            return
-        }
         isScanningCodes = true
         troubleCodes = [:]
         scanError = nil
@@ -24,6 +20,12 @@ extension OBDViewModel {
                 let total = Self.demoDTCs.values.map(\.count).reduce(0, +)
                 self.log("DTC scan: \(total) code(s) found")
             }
+            return
+        }
+
+        guard let service = activeService else {
+            log("Diagnostics: not connected")
+            isScanningCodes = false
             return
         }
 
