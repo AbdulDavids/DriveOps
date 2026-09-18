@@ -61,6 +61,8 @@ DriveOps/
 └── OBDViewModel.swift        Connection state and live data pipeline
 ```
 
+For a deeper look at the architecture, connection lifecycle, and the reasoning behind specific decisions, see [`docs/`](docs/README.md).
+
 ## Known issues
 
 The mock data manager bugs tracked in `swiftobd2-bug-report.md` (crash on `fuelLevel`, missing `controlModuleVoltage`) also exist upstream in EVMSwiftOBD2, since it inherited that code from the original SwiftOBD2. `OBDViewModel` works around both by excluding those two PIDs from the live-data poll.
