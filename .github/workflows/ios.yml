@@ -18,32 +18,36 @@ jobs:
       - name: Select destination
         id: destination
         run: |
-          # xcodebuild resolves its own destinations, so ask it directly instead of a
-          # separate tool (xcrun xctrace) that can disagree about what's installed —
-          # that mismatch is what broke this workflow previously.
-          device=$(xcodebuild -showdestinations -project DriveOps.xcodeproj -scheme DriveOps 2>/dev/null \
-            | grep -o 'platform:iOS Simulator, [^}]*name:iPhone[^}]*' \
-            | sed -E 's/.*name:([^}]+)\}?/\1/' \
-            | sed -E 's/[[:space:]]+$//' \
-            | head -1)
-          if [ -z "$device" ]; then
+          # A bare `name=` destination leaves xcodebuild to default OS to
+          # "latest", which fails whenever a name (e.g. "iPhone 16e") exists
+          # at more than one installed runtime and none matches "latest" —
+          # this is what broke the workflow previously. Picking a specific
+          # simulator's `id:` (a UUID) sidesteps name/OS matching entirely.
+          device_id=$(xcodebuild -showdestinations -project DriveOps.xcodeproj -scheme DriveOps 2>/dev/null \
+            | grep 'platform:iOS Simulator' \
+            | grep 'name:iPhone' \
+            | grep -v placeholder \
+            | grep -o 'id:[^,]*' \
+            | head -1 \
+            | cut -d: -f2)
+          if [ -z "$device_id" ]; then
             echo "No iPhone simulator destination found" >&2
             xcodebuild -showdestinations -project DriveOps.xcodeproj -scheme DriveOps
             exit 1
           fi
-          echo "Using simulator: $device"
-          echo "device=$device" >> "$GITHUB_OUTPUT"
+          echo "Using simulator id: $device_id"
+          echo "device_id=$device_id" >> "$GITHUB_OUTPUT"
 
       - name: Build
         run: |
           xcodebuild build-for-testing \
             -scheme DriveOps \
             -project DriveOps.xcodeproj \
-            -destination "platform=iOS Simulator,name=${{ steps.destination.outputs.device }}"
+            -destination "id=${{ steps.destination.outputs.device_id }}"
 
       - name: Test
         run: |
           xcodebuild test-without-building \
             -scheme DriveOps \
             -project DriveOps.xcodeproj \
-            -destination "platform=iOS Simulator,name=${{ steps.destination.outputs.device }}"
+            -destination "id=${{ steps.destination.outputs.device_id }}"
