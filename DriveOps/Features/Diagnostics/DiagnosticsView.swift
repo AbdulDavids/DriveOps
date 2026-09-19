@@ -5,6 +5,7 @@
 
 import SwiftUI
 import SwiftOBD2
+import VIN
 
 struct DiagnosticsView: View {
     @ObservedObject var vm: OBDViewModel
@@ -60,6 +61,28 @@ struct DiagnosticsView: View {
     @ViewBuilder
     private var codeList: some View {
         List(selection: $selectedCode) {
+            if let vin = vm.obdInfo?.vin {
+                Section {
+                    HStack {
+                        Label("VIN", systemImage: "number")
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                        Text(vin)
+                            .font(.system(.subheadline, design: .monospaced))
+                            .foregroundStyle(.secondary)
+                    }
+                    if let manufacturer = vm.decodedVIN?.manufacturer {
+                        HStack {
+                            Text("Manufacturer")
+                                .foregroundStyle(.secondary)
+                            Spacer()
+                            Text(manufacturer)
+                                .font(.subheadline)
+                        }
+                    }
+                }
+            }
+
             if !isConnected {
                 ContentUnavailableView(
                     "Not Connected",

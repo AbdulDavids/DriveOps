@@ -1,5 +1,5 @@
 {
-  "originHash" : "5454d973fd95d5394d09f73c5bada50edf647d892dda7ee03f0cc391da6692b2",
+  "originHash" : "31be6175ac13e3056d37a67cbd9aa06b6148b2895b9cf6e6a08f6df51d40d22f",
   "pins" : [
     {
       "identity" : "appleintelligenceforswiftui",
@@ -17,6 +17,15 @@
       "state" : {
         "branch" : "develop",
         "revision" : "ff69b919875ba19f901f2f8db05f55bb214b4d24"
+      }
+    },
+    {
+      "identity" : "vin",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/Automotive-Swift/VIN.git",
+      "state" : {
+        "revision" : "2dce2afde07470bd34e6b9d315ca562aad3e0bae",
+        "version" : "2.0.0"
       }
     }
   ],

@@ -6,6 +6,7 @@
 import Foundation
 import Combine
 import SwiftOBD2
+import VIN
 import os
 
 /// The connection the UI is showing, layered over the library's `ConnectionType`
@@ -33,6 +34,13 @@ class OBDViewModel: ObservableObject {
     @Published var troubleCodes: [ECUID: [TroubleCode]] = [:]
     @Published var isScanningCodes = false
     @Published var scanError: String?
+
+    /// The connected vehicle's VIN, decoded into structured identity info
+    /// (manufacturer, model year, region, …) when the adapter reported one.
+    var decodedVIN: VIN? {
+        guard let raw = obdInfo?.vin, VIN.isValid(raw) else { return nil }
+        return VIN(content: raw)
+    }
 
     private let historyLimit = 120
     private let logLimit = 500

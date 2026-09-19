@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		961B06682F96DA31004A2A7C /* AppleIntelligenceForSwiftUI in Frameworks */ = {isa = PBXBuildFile; productRef = 961B06692F96DA31004A2A7C /* AppleIntelligenceForSwiftUI */; };
 		9661CECF2F7510F600B851E8 /* SwiftOBD2 in Frameworks */ = {isa = PBXBuildFile; productRef = 9661CECE2F7510F600B851E8 /* SwiftOBD2 */; };
+		9601A0002F9A000100000001 /* VIN in Frameworks */ = {isa = PBXBuildFile; productRef = 9601A0012F9A000100000001 /* VIN */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -72,6 +73,7 @@
 			files = (
 				9661CECF2F7510F600B851E8 /* SwiftOBD2 in Frameworks */,
 				961B06682F96DA31004A2A7C /* AppleIntelligenceForSwiftUI in Frameworks */,
+				9601A0002F9A000100000001 /* VIN in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -134,6 +136,7 @@
 			packageProductDependencies = (
 				9661CECE2F7510F600B851E8 /* SwiftOBD2 */,
 				961B06692F96DA31004A2A7C /* AppleIntelligenceForSwiftUI */,
+				9601A0012F9A000100000001 /* VIN */,
 			);
 			productName = DriveOps;
 			productReference = 962FAE4E2F73AF60008D4207 /* DriveOps.app */;
@@ -220,6 +223,7 @@
 			packageReferences = (
 				9661CECD2F7510F600B851E8 /* XCRemoteSwiftPackageReference "EVMSwiftOBD2" */,
 				961B06672F96DA31004A2A7C /* XCRemoteSwiftPackageReference "AppleIntelligenceForSwiftUI" */,
+				9601A0022F9A000100000001 /* XCRemoteSwiftPackageReference "VIN" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 962FAE4F2F73AF60008D4207 /* Products */;
@@ -673,6 +677,14 @@
 				kind = branch;
 			};
 		};
+		9601A0022F9A000100000001 /* XCRemoteSwiftPackageReference "VIN" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/Automotive-Swift/VIN.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.0.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -685,6 +697,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 9661CECD2F7510F600B851E8 /* XCRemoteSwiftPackageReference "EVMSwiftOBD2" */;
 			productName = SwiftOBD2;
+		};
+		9601A0012F9A000100000001 /* VIN */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 9601A0022F9A000100000001 /* XCRemoteSwiftPackageReference "VIN" */;
+			productName = VIN;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

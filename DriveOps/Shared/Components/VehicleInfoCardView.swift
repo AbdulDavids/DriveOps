@@ -5,11 +5,17 @@
 
 import SwiftUI
 import SwiftOBD2
+import VIN
 
 struct VehicleInfoCardView: View {
     let info: OBDInfo
 
     @State private var expanded = false
+
+    private var decodedVIN: VIN? {
+        guard let raw = info.vin, VIN.isValid(raw) else { return nil }
+        return VIN(content: raw)
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -38,6 +44,18 @@ struct VehicleInfoCardView: View {
 
                     if let vin = info.vin {
                         InfoRow(label: "VIN", value: vin)
+                    }
+
+                    if let decodedVIN {
+                        if let manufacturer = decodedVIN.manufacturer {
+                            InfoRow(label: "Manufacturer", value: manufacturer)
+                        }
+                        if let modelYear = decodedVIN.modelYear {
+                            InfoRow(label: "Model Year", value: "\(modelYear)")
+                        }
+                        if let country = decodedVIN.countryName {
+                            InfoRow(label: "Origin", value: "\(decodedVIN.flag ?? "") \(country)".trimmingCharacters(in: .whitespaces))
+                        }
                     }
 
                     if let supported = info.supportedPIDs {
