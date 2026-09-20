@@ -24,20 +24,29 @@ enum PIDCatalog {
         .filter(\.properties.live)
         .sorted { $0.properties.command < $1.properties.command }
 
-    /// The poll list DriveOps shipped with before PIDs became selectable —
-    /// used as the default selection so existing behavior doesn't change
-    /// for anyone who hasn't opened the picker yet.
+    /// A compact first dashboard. Existing saved choices are preserved; this
+    /// only applies to first use or a new vehicle layout.
     static let defaultSelection: Set<OBDCommand> = [
         .mode1(.rpm),
         .mode1(.speed),
         .mode1(.coolantTemp),
-        .mode1(.throttlePos),
         .mode1(.engineLoad),
+    ]
+
+    static let warmUpSelection: Set<OBDCommand> = [
+        .mode1(.rpm),
+        .mode1(.coolantTemp),
         .mode1(.intakeTemp),
+        .mode1(.engineLoad),
+    ]
+
+    static let airAndFuelSelection: Set<OBDCommand> = [
+        .mode1(.rpm),
+        .mode1(.engineLoad),
+        .mode1(.throttlePos),
         .mode1(.maf),
-        .mode1(.barometricPressure),
         .mode1(.intakePressure),
-        .mode1(.timingAdvance),
+        .mode1(.barometricPressure),
     ]
 }
 
@@ -53,14 +62,44 @@ enum PIDSelectionStore {
             return PIDCatalog.defaultSelection
         }
         let savedSet = Set(saved)
-        let restored = PIDCatalog.allLivePIDs.filter { savedSet.contains($0.properties.command) }
-        // An empty save could mean "user deselected everything" or "nothing
-        // was ever saved" — since polling with zero PIDs is never useful,
-        // treat an empty result as "not yet configured" and fall back.
-        return restored.isEmpty ? PIDCatalog.defaultSelection : Set(restored)
+        // A stored empty array is an intentional empty dashboard. Only the
+        // absence of this key means a first launch that needs essentials.
+        return Set(PIDCatalog.allLivePIDs.filter { savedSet.contains($0.properties.command) })
     }
 
     static func save(_ pids: Set<OBDCommand>) {
         UserDefaults.standard.set(pids.map(\.properties.command), forKey: key)
+    }
+}
+
+/// Ordered dashboard membership is distinct from the polling set. The order
+/// is the user's layout; polling may temporarily include a sensor opened in a
+/// detail view in a later iteration.
+enum DashboardLayoutStore {
+    private static let legacyKey = "dashboardMetricCommands"
+    private static let key = "dashboardMetricCommandsByVehicle"
+
+    static func load(for vehicleID: String) -> [String] {
+        if let layouts = UserDefaults.standard.dictionary(forKey: key) as? [String: [String]], let saved = layouts[vehicleID] {
+            return saved
+        }
+        // Preserve the pre-redesign layout when a user first connects after
+        // upgrading. It is copied to the chosen vehicle on its first save.
+        if let legacy = UserDefaults.standard.stringArray(forKey: legacyKey) {
+            return legacy
+        }
+        return PIDCatalog.defaultSelection.map(\.properties.command).sorted()
+    }
+
+    static func save(_ commands: [String], for vehicleID: String) {
+        var layouts = UserDefaults.standard.dictionary(forKey: key) as? [String: [String]] ?? [:]
+        layouts[vehicleID] = commands
+        UserDefaults.standard.set(layouts, forKey: key)
+    }
+}
+
+extension PIDCatalog {
+    static func command(named command: String) -> OBDCommand? {
+        allLivePIDs.first { $0.properties.command == command }
     }
 }

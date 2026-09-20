@@ -2,34 +2,54 @@
 //  DriveOpsTests.swift
 //  DriveOpsTests
 //
-//  Created by Abdul Baari Davids on 2026/03/25.
-//
 
 import XCTest
+@testable import DriveOps
 
+@MainActor
 final class DriveOpsTests: XCTestCase {
-
-    override func setUpWithError() throws {
-        // Put setup code here. This method is called before the invocation of each test method in the class.
+    func testManualLapsAndRestart() {
+        let session = TrackSession()
+        session.lap(at: 10)
+        XCTAssertTrue(session.laps.isEmpty)
+        session.start(at: 100)
+        session.start(at: 110)
+        session.lap(at: 181.25)
+        session.lap(at: 260)
+        XCTAssertEqual(session.laps, [81.25, 78.75])
+        XCTAssertEqual(session.lastLap, 78.75)
+        XCTAssertEqual(session.bestLap, 78.75)
+        XCTAssertEqual(session.elapsed(at: 270), 10)
+        session.stop()
+        XCTAssertNil(session.elapsed(at: 280))
+        session.start(at: 300)
+        session.lap(at: 360)
+        XCTAssertEqual(session.lastLap, 60)
+        XCTAssertEqual(TrackSession.formatted(81.25), "1:21.25")
+        session.reset()
+        XCTAssertTrue(session.laps.isEmpty)
+        XCTAssertFalse(session.isRunning)
     }
 
-    override func tearDownWithError() throws {
-        // Put teardown code here. This method is called after the invocation of each test method in the class.
+    func testRPMRecoveryStripsOnlyTheKnownPIDEcho() {
+        let recovered = MetricCatalog.normaliseRPMValue(197_681)
+
+        XCTAssertTrue(recovered.recovered)
+        XCTAssertEqual(recovered.value, 1_073)
+
+        let ordinary = MetricCatalog.normaliseRPMValue(2_750)
+        XCTAssertFalse(ordinary.recovered)
+        XCTAssertEqual(ordinary.value, 2_750)
     }
 
-    func testExample() throws {
-        // This is an example of a functional test case.
-        // Use XCTAssert and related functions to verify your tests produce the correct results.
-        // Any test you write for XCTest can be annotated as throws and async.
-        // Mark your test throws to produce an unexpected failure when your test encounters an uncaught error.
-        // Mark your test async to allow awaiting for asynchronous code to complete. Check the results with assertions afterwards.
-    }
+    func testStaleMetricKeepsItsLastValue() {
+        let metric = LiveMetric(
+            id: "010C", name: "Engine RPM", category: "Engine", value: 1_073,
+            unit: "rpm", updatedAt: .now, quality: .live
+        )
 
-    func testPerformanceExample() throws {
-        // This is an example of a performance test case.
-        measure {
-            // Put the code you want to measure the time of here.
-        }
+        let stale = metric.markedStale()
+        XCTAssertEqual(stale.value, 1_073)
+        XCTAssertEqual(stale.quality, .stale)
     }
-
 }

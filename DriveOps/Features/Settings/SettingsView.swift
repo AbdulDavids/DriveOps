@@ -86,6 +86,21 @@ private let changelog: [ChangelogEntry] = [
 
 struct SettingsView: View {
     @ObservedObject var vm: OBDViewModel
+    @State private var showLogs = false
+    var body: some View {
+        VStack(spacing: 0) {
+            Picker("Settings section", selection: $showLogs) {
+                Text("Preferences").tag(false)
+                Text("Logs").tag(true)
+            }
+            .pickerStyle(.segmented).padding(.horizontal).padding(.top, 8)
+            if showLogs { LogsView(vm: vm) } else { SettingsPreferencesView(vm: vm) }
+        }
+    }
+}
+
+private struct SettingsPreferencesView: View {
+    @ObservedObject var vm: OBDViewModel
     @AppStorage("aiChatProvider") private var providerRaw: String = AIChatProvider.chatgpt.rawValue
     // The default here only applies before OnDeviceAIMode.loadInitial() has
     // ever run (i.e. this @AppStorage key has no value yet); .onAppear below

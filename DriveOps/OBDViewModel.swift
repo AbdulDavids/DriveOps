@@ -28,6 +28,9 @@ class OBDViewModel: ObservableObject {
     @Published var obdInfo: OBDInfo?
     @Published var liveData: [String: String] = [:]
     @Published var metricHistory: [String: [MetricSample]] = [:]
+    /// Typed, validated readings for the dashboard. `liveData` remains during
+    /// the migration for older views and previews; new UI must use this store.
+    @Published private(set) var liveMetrics: [String: LiveMetric] = [:]
     @Published var errorMessage: String?
     @Published var isConnecting = false
     @Published var activeConnectionType: AppConnectionType?
@@ -85,6 +88,57 @@ class OBDViewModel: ObservableObject {
             PIDSelectionStore.save(selectedPIDs)
             log("PID selection changed: \(selectedPIDs.count) PID(s) selected.")
         }
+    }
+
+    // Track is a temporary subscriber. Its fields do not alter the user's
+    // persisted dashboard/poll selection and stop being requested on exit.
+    private var trackDemand: Set<OBDCommand> = []
+    func setTrackDemand(_ ids: Set<String>) {
+        trackDemand = Set(ids.compactMap { PIDCatalog.command(named: $0) })
+    }
+    var requestedPIDs: Set<OBDCommand> { selectedPIDs.union(trackDemand) }
+
+    @Published private(set) var dashboardVehicleID = "default"
+    @Published var dashboardMetricIDs: [String] = DashboardLayoutStore.load(for: "default") {
+        didSet {
+            guard dashboardMetricIDs != oldValue else { return }
+            DashboardLayoutStore.save(dashboardMetricIDs, for: dashboardVehicleID)
+        }
+    }
+
+    private func activateDashboard(for vehicleID: String) {
+        dashboardVehicleID = vehicleID
+        dashboardMetricIDs = DashboardLayoutStore.load(for: vehicleID)
+        selectedPIDs = Set(dashboardMetricIDs.compactMap(PIDCatalog.command(named:)))
+        liveData = [:]
+        metricHistory = [:]
+        liveMetrics = [:]
+    }
+
+    func addToDashboard(_ pid: OBDCommand) {
+        if !dashboardMetricIDs.contains(pid.properties.command) {
+            dashboardMetricIDs.append(pid.properties.command)
+        }
+        selectedPIDs.insert(pid)
+    }
+
+    func removeFromDashboard(_ command: String) {
+        dashboardMetricIDs.removeAll { $0 == command }
+        if let pid = PIDCatalog.command(named: command) {
+            selectedPIDs.remove(pid)
+        }
+        liveData = liveData.filter { key, _ in
+            dashboardMetricIDs.contains { PIDCatalog.command(named: $0).map { MetricCatalog.displayName(for: $0) == key } ?? false }
+        }
+    }
+
+    func moveDashboardMetric(from source: IndexSet, to destination: Int) {
+        let moving = source.map { dashboardMetricIDs[$0] }
+        for index in source.sorted(by: >) {
+            dashboardMetricIDs.remove(at: index)
+        }
+        let adjustedDestination = destination - source.filter { $0 < destination }.count
+        dashboardMetricIDs.insert(contentsOf: moving, at: adjustedDestination)
     }
 
     private let historyLimit = 120
@@ -188,6 +242,7 @@ class OBDViewModel: ObservableObject {
         activeConnectionType = nil
         connectionState = .disconnected
         metricHistory = [:]
+        liveMetrics = [:]
     }
 
     func disconnect() {
@@ -202,6 +257,7 @@ class OBDViewModel: ObservableObject {
         obdInfo = nil
         liveData = [:]
         metricHistory = [:]
+        liveMetrics = [:]
         pollCycleCount = 0
         pollErrorCount = 0
     }
@@ -224,6 +280,7 @@ class OBDViewModel: ObservableObject {
                 }
                 let elapsed = Date().timeIntervalSince(startedAt)
                 self.obdInfo = info
+                self.activateDashboard(for: info.vin?.uppercased() ?? "unidentified")
                 self.isConnecting = false
                 self.connectTask = nil
                 self.log("Connected via \(type.rawValue) in \(String(format: "%.2f", elapsed))s. Protocol: \(info.obdProtocol?.description ?? "unknown"), VIN: \(info.vin ?? "n/a"), PIDs: \(info.supportedPIDs?.count ?? 0), ECUs: \(info.ecuMap?.count ?? 0)")
@@ -260,6 +317,7 @@ class OBDViewModel: ObservableObject {
             self.isConnecting = false
             self.connectTask = nil
             self.connectionState = .connectedToVehicle
+            self.activateDashboard(for: "demo")
             self.log("Connected via demo (simulated driving cycle)")
             AppLogger.demo.info("startConnectingDemo connected")
             self.startSimulatedPoll()
@@ -297,7 +355,7 @@ class OBDViewModel: ObservableObject {
                 // Read fresh each cycle (not captured once at loop start) so a
                 // picker edit mid-session takes effect on the very next tick
                 // without needing a reconnect — see selectedPIDs' didSet.
-                let pids = Array(self.selectedPIDs)
+                let pids = self.requestedPIDs.sorted { $0.properties.command < $1.properties.command }
                 guard !pids.isEmpty else {
                     // Only reachable transiently while the picker UI is mid-edit
                     // (PIDSelectionStore never persists an empty set as the
@@ -330,10 +388,19 @@ class OBDViewModel: ObservableObject {
                     let now = Date()
                     var updated = self.liveData
                     var updatedHistory = self.metricHistory
+                    var updatedMetrics = self.liveMetrics
+                    let returnedCommands = Set(results.keys.map(\.properties.command))
+                    for command in self.requestedPIDs.map(\.properties.command) where !returnedCommands.contains(command) {
+                        guard let prior = updatedMetrics[command], now.timeIntervalSince(prior.updatedAt) > 2 else { continue }
+                        updatedMetrics[command] = prior.markedStale()
+                    }
                     for (cmd, measurement): (OBDCommand, MeasurementResult) in results {
-                        let key = cmd.properties.description
-                        updated[key] = "\((measurement.value * 10).rounded() / 10) \(measurement.unit.symbol)"
-                        let sample = MetricSample(timestamp: now, value: measurement.value)
+                        let metric = MetricCatalog.reading(for: cmd, result: measurement, at: now)
+                        let key = metric.name
+                        updatedMetrics[metric.id] = metric
+                        guard let value = metric.value else { continue }
+                        updated[key] = MetricCatalog.format(metric)
+                        let sample = MetricSample(timestamp: now, value: value)
                         var history = updatedHistory[key] ?? []
                         history.append(sample)
                         if history.count > self.historyLimit { history.removeFirst() }
@@ -341,6 +408,7 @@ class OBDViewModel: ObservableObject {
                     }
                     self.liveData = updated
                     self.metricHistory = updatedHistory
+                    self.liveMetrics = updatedMetrics
                 } catch {
                     self.pollErrorCount += 1
                     if !Task.isCancelled {
@@ -368,16 +436,21 @@ class OBDViewModel: ObservableObject {
                 let now = Date()
                 var updated = self.liveData
                 var updatedHistory = self.metricHistory
+                var updatedMetrics = self.liveMetrics
                 for (key, reading) in readings {
-                    updated[key] = "\((reading.value * 10).rounded() / 10) \(reading.unit)"
+                    let metric = MetricCatalog.simulated(name: key, value: reading.value, unit: reading.unit, at: now)
+                    guard self.requestedPIDs.contains(where: { $0.properties.command == metric.id }) else { continue }
+                    updatedMetrics[metric.id] = metric
+                    updated[metric.name] = MetricCatalog.format(metric)
                     let sample = MetricSample(timestamp: now, value: reading.value)
-                    var history = updatedHistory[key] ?? []
+                    var history = updatedHistory[metric.name] ?? []
                     history.append(sample)
                     if history.count > self.historyLimit { history.removeFirst() }
-                    updatedHistory[key] = history
+                    updatedHistory[metric.name] = history
                 }
                 self.liveData = updated
                 self.metricHistory = updatedHistory
+                self.liveMetrics = updatedMetrics
                 try? await Task.sleep(nanoseconds: 300_000_000)
             }
         }
@@ -400,6 +473,13 @@ extension OBDViewModel {
         vm.connectionState = state
         vm.obdInfo = info
         vm.liveData = liveData
+        vm.liveMetrics = liveData.reduce(into: [:]) { metrics, item in
+            let parts = item.value.split(separator: " ", maxSplits: 1).map(String.init)
+            let value = Double(parts.first ?? "") ?? 0
+            let unit = parts.count > 1 ? parts[1] : ""
+            let metric = MetricCatalog.simulated(name: item.key, value: value, unit: unit)
+            metrics[metric.id] = metric
+        }
         vm.errorMessage = error
         vm.troubleCodes = troubleCodes
         vm.isScanningCodes = isScanningCodes

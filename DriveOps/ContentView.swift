@@ -32,9 +32,9 @@ struct ContentView: View {
                     Label("Diagnostics", systemImage: "stethoscope")
                 }
 
-            LogsView(vm: vm)
+            TrackView(vm: vm)
                 .tabItem {
-                    Label("Logs", systemImage: "terminal")
+                    Label("Track", systemImage: "flag.checkered")
                 }
 
             SettingsView(vm: vm)
