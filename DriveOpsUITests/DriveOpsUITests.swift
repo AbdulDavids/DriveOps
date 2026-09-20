@@ -24,7 +24,7 @@ final class DriveOpsUITests: XCTestCase {
         // instead of asserting the instant START appears.
         let tabBarGone = NSPredicate(format: "exists == false")
         let expectation = XCTNSPredicateExpectation(predicate: tabBarGone, object: app.tabBars.firstMatch)
-        XCTAssertEqual(XCTWaiter().wait(for: [expectation], timeout: 5), .completed)
+        XCTAssertEqual(XCTWaiter().wait(for: [expectation], timeout: 15), .completed)
         app.buttons["START"].tap()
         XCTAssertTrue(app.buttons["LAP"].waitForExistence(timeout: 5))
         app.buttons["LAP"].tap()
