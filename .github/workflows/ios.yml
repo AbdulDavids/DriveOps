@@ -47,7 +47,20 @@ jobs:
 
       - name: Test
         run: |
+          # -parallel-testing-enabled NO: the unit tests (DriveOpsTests) and
+          # UI tests (DriveOpsUITests) otherwise launch as separate test host
+          # "Clones" at the same instant, each booting its own simulator
+          # session. On this runner's shared CPU/memory that contention shows
+          # up as repeated `DebuggerLLDB.DebuggerVersionStore.StoreError`
+          # while the debugger fails to attach, then a test failing in
+          # 0.000s the moment its suite starts — a launch race, not a real
+          # assertion failure. Running serially removes that race.
+          # -retry-tests-on-failure: a genuine one-off simulator hiccup (sim
+          # boot timeout, transient debugger-attach failure) gets retried
+          # once instead of failing the whole job outright.
           xcodebuild test-without-building \
             -scheme DriveOps \
             -project DriveOps.xcodeproj \
-            -destination "id=${{ steps.destination.outputs.device_id }}"
+            -destination "id=${{ steps.destination.outputs.device_id }}" \
+            -parallel-testing-enabled NO \
+            -retry-tests-on-failure
