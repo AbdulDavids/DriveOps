@@ -8,11 +8,23 @@
 
 /* Begin PBXBuildFile section */
 		9601A0002F9A000100000001 /* VIN in Frameworks */ = {isa = PBXBuildFile; productRef = 9601A0012F9A000100000001 /* VIN */; };
+		960802403060659600A6837C /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9608023F3060659600A6837C /* WidgetKit.framework */; };
+		960802423060659600A6837C /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 960802413060659600A6837C /* SwiftUI.framework */; };
+		960802533060659700A6837C /* CoDriverExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 9608023D3060659600A6837C /* CoDriverExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		961B06682F96DA31004A2A7C /* AppleIntelligenceForSwiftUI in Frameworks */ = {isa = PBXBuildFile; productRef = 961B06692F96DA31004A2A7C /* AppleIntelligenceForSwiftUI */; };
 		9661CECF2F7510F600B851E8 /* SwiftOBD2 in Frameworks */ = {isa = PBXBuildFile; productRef = 9661CECE2F7510F600B851E8 /* SwiftOBD2 */; };
+		BBAD14D465441B8B04430FDA /* CoDriverAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAE78A7BA16658CAE10849F7 /* CoDriverAttributes.swift */; };
+		BE7B082EC8201F61AA3BE327 /* CoDriverAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAE78A7BA16658CAE10849F7 /* CoDriverAttributes.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		960802513060659700A6837C /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 962FAE462F73AF60008D4207 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 9608023C3060659600A6837C;
+			remoteInfo = CoDriverExtension;
+		};
 		962FAE5E2F73AF62008D4207 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 962FAE462F73AF60008D4207 /* Project object */;
@@ -29,13 +41,38 @@
 		};
 /* End PBXContainerItemProxy section */
 
+/* Begin PBXCopyFilesBuildPhase section */
+		960802583060659700A6837C /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				960802533060659700A6837C /* CoDriverExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
+		9608023D3060659600A6837C /* CoDriverExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = CoDriverExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		9608023F3060659600A6837C /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
+		960802413060659600A6837C /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 		962FAE4E2F73AF60008D4207 /* DriveOps.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DriveOps.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		962FAE5D2F73AF62008D4207 /* DriveOpsTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = DriveOpsTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		962FAE672F73AF62008D4207 /* DriveOpsUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = DriveOpsUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		EAE78A7BA16658CAE10849F7 /* CoDriverAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoDriverAttributes.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		960802573060659700A6837C /* Exceptions for "CoDriver" folder in "CoDriverExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 9608023C3060659600A6837C /* CoDriverExtension */;
+		};
 		969CD4F82F7BDA530037FA70 /* Exceptions for "DriveOps" folder in "DriveOps" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -46,6 +83,14 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		960802433060659600A6837C /* CoDriver */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				960802573060659700A6837C /* Exceptions for "CoDriver" folder in "CoDriverExtension" target */,
+			);
+			path = CoDriver;
+			sourceTree = "<group>";
+		};
 		962FAE502F73AF60008D4207 /* DriveOps */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
@@ -67,6 +112,15 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		9608023A3060659600A6837C /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				960802423060659600A6837C /* SwiftUI.framework in Frameworks */,
+				960802403060659600A6837C /* WidgetKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		962FAE4B2F73AF60008D4207 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -94,12 +148,24 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		9608023E3060659600A6837C /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				9608023F3060659600A6837C /* WidgetKit.framework */,
+				960802413060659600A6837C /* SwiftUI.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		962FAE452F73AF60008D4207 = {
 			isa = PBXGroup;
 			children = (
 				962FAE502F73AF60008D4207 /* DriveOps */,
 				962FAE602F73AF62008D4207 /* DriveOpsTests */,
 				962FAE6A2F73AF62008D4207 /* DriveOpsUITests */,
+				960802433060659600A6837C /* CoDriver */,
+				BC0A14D465441B8B04430FD1 /* SharedActivity */,
+				9608023E3060659600A6837C /* Frameworks */,
 				962FAE4F2F73AF60008D4207 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -110,13 +176,44 @@
 				962FAE4E2F73AF60008D4207 /* DriveOps.app */,
 				962FAE5D2F73AF62008D4207 /* DriveOpsTests.xctest */,
 				962FAE672F73AF62008D4207 /* DriveOpsUITests.xctest */,
+				9608023D3060659600A6837C /* CoDriverExtension.appex */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		BC0A14D465441B8B04430FD1 /* SharedActivity */ = {
+			isa = PBXGroup;
+			children = (
+				EAE78A7BA16658CAE10849F7 /* CoDriverAttributes.swift */,
+			);
+			path = SharedActivity;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		9608023C3060659600A6837C /* CoDriverExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 960802543060659700A6837C /* Build configuration list for PBXNativeTarget "CoDriverExtension" */;
+			buildPhases = (
+				960802393060659600A6837C /* Sources */,
+				9608023A3060659600A6837C /* Frameworks */,
+				9608023B3060659600A6837C /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				960802433060659600A6837C /* CoDriver */,
+			);
+			name = CoDriverExtension;
+			packageProductDependencies = (
+			);
+			productName = CoDriverExtension;
+			productReference = 9608023D3060659600A6837C /* CoDriverExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 		962FAE4D2F73AF60008D4207 /* DriveOps */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 962FAE712F73AF62008D4207 /* Build configuration list for PBXNativeTarget "DriveOps" */;
@@ -124,10 +221,12 @@
 				962FAE4A2F73AF60008D4207 /* Sources */,
 				962FAE4B2F73AF60008D4207 /* Frameworks */,
 				962FAE4C2F73AF60008D4207 /* Resources */,
+				960802583060659700A6837C /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				960802523060659700A6837C /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				962FAE502F73AF60008D4207 /* DriveOps */,
@@ -198,6 +297,9 @@
 				LastSwiftUpdateCheck = 2720;
 				LastUpgradeCheck = 2720;
 				TargetAttributes = {
+					9608023C3060659600A6837C = {
+						CreatedOnToolsVersion = 27.2;
+					};
 					962FAE4D2F73AF60008D4207 = {
 						CreatedOnToolsVersion = 26.2;
 					};
@@ -233,11 +335,19 @@
 				962FAE4D2F73AF60008D4207 /* DriveOps */,
 				962FAE5C2F73AF62008D4207 /* DriveOpsTests */,
 				962FAE662F73AF62008D4207 /* DriveOpsUITests */,
+				9608023C3060659600A6837C /* CoDriverExtension */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		9608023B3060659600A6837C /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		962FAE4C2F73AF60008D4207 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -262,10 +372,19 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		960802393060659600A6837C /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BBAD14D465441B8B04430FDA /* CoDriverAttributes.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		962FAE4A2F73AF60008D4207 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				BE7B082EC8201F61AA3BE327 /* CoDriverAttributes.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -286,6 +405,11 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		960802523060659700A6837C /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 9608023C3060659600A6837C /* CoDriverExtension */;
+			targetProxy = 960802513060659700A6837C /* PBXContainerItemProxy */;
+		};
 		962FAE5F2F73AF62008D4207 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 962FAE4D2F73AF60008D4207 /* DriveOps */;
@@ -299,6 +423,73 @@
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
+		960802553060659700A6837C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 8;
+				DEVELOPMENT_TEAM = YPPL9F7Y4F;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = CoDriver/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = CoDriver;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 27.2;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 0.3.3;
+				PRODUCT_BUNDLE_IDENTIFIER = abduldavids.DriveOps.CoDriver;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		960802563060659700A6837C /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 8;
+				DEVELOPMENT_TEAM = YPPL9F7Y4F;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = CoDriver/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = CoDriver;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 27.2;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 0.3.3;
+				PRODUCT_BUNDLE_IDENTIFIER = abduldavids.DriveOps.CoDriver;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
 		962FAE6F2F73AF62008D4207 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -423,7 +614,7 @@
 				CODE_SIGN_ENTITLEMENTS = DriveOps/DriveOps.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 7;
+				CURRENT_PROJECT_VERSION = 8;
 				DEVELOPMENT_TEAM = YPPL9F7Y4F;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -447,7 +638,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 26.2;
-				MARKETING_VERSION = 0.3.2;
+				MARKETING_VERSION = 0.3.3;
 				PRODUCT_BUNDLE_IDENTIFIER = abduldavids.DriveOps;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -474,7 +665,7 @@
 				CODE_SIGN_ENTITLEMENTS = DriveOps/DriveOps.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 7;
+				CURRENT_PROJECT_VERSION = 8;
 				DEVELOPMENT_TEAM = YPPL9F7Y4F;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -498,7 +689,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 26.2;
-				MARKETING_VERSION = 0.3.2;
+				MARKETING_VERSION = 0.3.3;
 				PRODUCT_BUNDLE_IDENTIFIER = abduldavids.DriveOps;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -622,6 +813,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		960802543060659700A6837C /* Build configuration list for PBXNativeTarget "CoDriverExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				960802553060659700A6837C /* Debug */,
+				960802563060659700A6837C /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		962FAE492F73AF60008D4207 /* Build configuration list for PBXProject "DriveOps" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

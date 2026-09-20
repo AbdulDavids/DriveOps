@@ -103,3 +103,23 @@ extension PIDCatalog {
         allLivePIDs.first { $0.properties.command == command }
     }
 }
+
+/// The metrics shown on the CoDriver Live Activity (Lock Screen + Dynamic
+/// Island) — a small, ordered subset distinct from the dashboard/poll
+/// selection, since the activity only has room for a couple of rows. See
+/// `LiveActivity/LiveActivityController.swift`.
+enum LiveActivityMetricsStore {
+    private static let key = "liveActivityMetricCommands"
+    static let maxSelected = 3
+
+    static func load() -> [String] {
+        guard let saved = UserDefaults.standard.stringArray(forKey: key) else {
+            return [OBDCommand.mode1(.rpm).properties.command]
+        }
+        return saved
+    }
+
+    static func save(_ commands: [String]) {
+        UserDefaults.standard.set(Array(commands.prefix(maxSelected)), forKey: key)
+    }
+}

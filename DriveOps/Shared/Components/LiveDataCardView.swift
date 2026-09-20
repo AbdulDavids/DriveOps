@@ -12,10 +12,10 @@ struct LiveDataCardView: View {
     @ObservedObject var vm: OBDViewModel
     var isWide: Bool = false
 
-    @State private var isEditing = false
     @State private var showSensors = false
     @State private var showComparison = false
     @State private var selectedMetric: LiveMetric?
+    @State private var metricPendingRemoval: LiveMetric?
 
     private var dashboardMetrics: [LiveMetric] {
         vm.dashboardMetricIDs.compactMap { command in
@@ -30,22 +30,10 @@ struct LiveDataCardView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            HStack(alignment: .firstTextBaseline) {
-                VStack(alignment: .leading, spacing: 3) {
-                    Text("Dashboard").font(.title3.weight(.semibold))
-                    Text("Your chosen live sensors").font(.caption).foregroundStyle(.secondary)
-                }
-                Spacer()
-                Button(isEditing ? "Done" : "Edit") { isEditing.toggle() }
-                    .buttonStyle(.bordered).controlSize(.small)
-            }
-
             if dashboardMetrics.isEmpty {
                 ContentUnavailableView("Add a sensor", systemImage: "plus.circle", description: Text("Choose the readings you want to keep on your dashboard."))
                 Button("Browse sensors") { showSensors = true }
                     .buttonStyle(.borderedProminent).frame(maxWidth: .infinity)
-            } else if isEditing {
-                DashboardEditor(vm: vm)
             } else {
                 LazyVGrid(columns: columns, spacing: 12) {
                     ForEach(dashboardMetrics) { metric in
@@ -53,6 +41,7 @@ struct LiveDataCardView: View {
                             metric: metric,
                             history: vm.metricHistory[metric.name] ?? [],
                             action: { selectedMetric = metric },
+                            onLongPress: { metricPendingRemoval = metric },
                             isConnected: vm.connectionState.isConnected
                         )
                     }
@@ -75,6 +64,16 @@ struct LiveDataCardView: View {
         .sheet(item: $selectedMetric) { metric in
             SensorDetailView(metric: metric, history: vm.metricHistory[metric.name] ?? [])
         }
+        .confirmationDialog(
+            "Remove \(metricPendingRemoval?.name ?? "sensor") from your dashboard?",
+            isPresented: Binding(get: { metricPendingRemoval != nil }, set: { if !$0 { metricPendingRemoval = nil } }),
+            titleVisibility: .visible
+        ) {
+            Button("Remove", role: .destructive) {
+                if let id = metricPendingRemoval?.id { vm.removeFromDashboard(id) }
+                metricPendingRemoval = nil
+            }
+        }
     }
 }
 
@@ -82,6 +81,7 @@ private struct MetricTile: View {
     let metric: LiveMetric
     let history: [MetricSample]
     let action: () -> Void
+    let onLongPress: () -> Void
     let isConnected: Bool
 
     private var status: String? {
@@ -115,30 +115,8 @@ private struct MetricTile: View {
             .background(Color(uiColor: .secondarySystemBackground), in: RoundedRectangle(cornerRadius: 14))
         }
         .buttonStyle(.plain).accessibilityHint("Opens sensor details")
-    }
-}
-
-@MainActor
-private struct DashboardEditor: View {
-    @ObservedObject var vm: OBDViewModel
-
-    var body: some View {
-        List {
-            Section("Shown on your dashboard") {
-                ForEach(vm.dashboardMetricIDs, id: \.self) { command in
-                    HStack {
-                        Text(PIDCatalog.command(named: command).map(MetricCatalog.displayName(for:)) ?? command)
-                        Spacer()
-                        Button(role: .destructive) { vm.removeFromDashboard(command) } label: {
-                            Image(systemName: "minus.circle.fill")
-                        }
-                        .buttonStyle(.plain).accessibilityLabel("Remove sensor")
-                    }
-                }
-                .onMove(perform: vm.moveDashboardMetric)
-            }
-        }
-        .frame(minHeight: 220)
+        .onLongPressGesture { onLongPress() }
+        .accessibilityAction(named: "Remove from dashboard") { onLongPress() }
     }
 }
 

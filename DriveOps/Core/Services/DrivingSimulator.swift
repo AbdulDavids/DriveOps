@@ -38,6 +38,12 @@ final class DrivingSimulator {
     private var intakeTemp: Double = 25
     private var baro: Double = 101
 
+    // A plausible used-car reading, accumulating in real time from
+    // simulated speed — see PID 01A6 (Odometer). Not every vehicle answers
+    // this PID over real OBD-II; demo mode spoofing it exercises the same
+    // "only shown when available" UI path in DiagnosticsView.
+    private var odometerKM: Double = 84_213.4
+
     // MARK: - Tick
 
     /// Call every ~300 ms. Returns a dict of OBD description → (value, unit symbol).
@@ -102,6 +108,9 @@ final class DrivingSimulator {
 
         baro = lerp(baro, 101.3 + Double.random(in: -0.2...0.2), factor: 0.01)
 
+        // km/h * hours elapsed this tick
+        odometerKM += speed * (dt / 3600)
+
         return [
             "Engine RPM":              (rpm.clamped(to: 0...8000), "rpm"),
             "Vehicle Speed":           (speed, "km/h"),
@@ -113,6 +122,7 @@ final class DrivingSimulator {
             "Barometric Pressure":     (baro, "kPa"),
             "Intake Manifold Pressure":(intakePress, "kPa"),
             "Timing Advance":          (timing, "°"),
+            "Odometer":                (odometerKM, "km"),
         ]
     }
 

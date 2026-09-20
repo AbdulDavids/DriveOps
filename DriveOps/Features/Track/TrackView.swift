@@ -3,7 +3,7 @@ import SwiftOBD2
 
 struct TrackView: View {
     @ObservedObject var vm: OBDViewModel
-    @StateObject private var session = TrackSession()
+    @ObservedObject private var session = TrackSession.shared
     @State private var showingTrack = false
 
     var body: some View {

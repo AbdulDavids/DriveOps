@@ -21,6 +21,11 @@ enum AppConnectionType: String {
 
 @MainActor
 class OBDViewModel: ObservableObject {
+    /// The one live connection/data instance, shared by the phone UI scene and
+    /// the CarPlay scene so CarPlay reflects the same connection instead of
+    /// opening a second, disconnected `OBDService`.
+    static let shared = OBDViewModel()
+
     private let bluetoothService = OBDService(connectionType: .bluetooth)
     var activeService: OBDService?
 
@@ -90,13 +95,17 @@ class OBDViewModel: ObservableObject {
         }
     }
 
-    // Track is a temporary subscriber. Its fields do not alter the user's
-    // persisted dashboard/poll selection and stop being requested on exit.
-    private var trackDemand: Set<OBDCommand> = []
-    func setTrackDemand(_ ids: Set<String>) {
-        trackDemand = Set(ids.compactMap { PIDCatalog.command(named: $0) })
+    // Track (phone) and CarPlay are independent temporary subscribers, keyed
+    // separately so one closing (e.g. the phone's Track view disappearing)
+    // doesn't clear the PIDs the other still needs. Neither alters the
+    // user's persisted dashboard/poll selection.
+    private var trackDemands: [String: Set<OBDCommand>] = [:]
+    func setTrackDemand(_ ids: Set<String>, source: String = "track") {
+        trackDemands[source] = Set(ids.compactMap { PIDCatalog.command(named: $0) })
     }
-    var requestedPIDs: Set<OBDCommand> { selectedPIDs.union(trackDemand) }
+    var requestedPIDs: Set<OBDCommand> {
+        trackDemands.values.reduce(selectedPIDs) { $0.union($1) }
+    }
 
     @Published private(set) var dashboardVehicleID = "default"
     @Published var dashboardMetricIDs: [String] = DashboardLayoutStore.load(for: "default") {
@@ -345,12 +354,32 @@ class OBDViewModel: ObservableObject {
             self.isConnecting = false
             self.connectTask = nil
             self.connectionState = .connectedToVehicle
+            self.obdInfo = Self.demoOBDInfo
             self.activateDashboard(for: "demo")
             self.log("Connected via demo (simulated driving cycle)")
             AppLogger.demo.info("startConnectingDemo connected")
             self.startSimulatedPoll()
         }
     }
+
+    /// A plausible, checksum-valid VIN (1HG = Honda, position 10 "M" = 2021)
+    /// so Diagnostics' vehicle card and the AI Mechanic's vehicle-aware
+    /// prompt (see vehicleContextForPrompt) have something realistic to show
+    /// in demo mode, matching what a real adapter would report.
+    ///
+    /// OBDInfo has no public initializer (its implicit memberwise init is
+    /// internal to SwiftOBD2), so it's decoded from JSON — same workaround
+    /// ContentView's preview data already uses — then the remaining fields
+    /// are set directly since they're `public var`.
+    private static let demoOBDInfo: OBDInfo? = {
+        guard var info = try? JSONDecoder().decode(OBDInfo.self, from: Data(#"{"vin":"1HGBH41JXMN109186"}"#.utf8)) else {
+            return nil
+        }
+        info.supportedPIDs = PIDCatalog.allLivePIDs
+        info.obdProtocol = .protocol6
+        info.ecuMap = [0x00: .engine, 0x01: .transmission]
+        return info
+    }()
 
     // MARK: - Private
 
@@ -460,7 +489,14 @@ class OBDViewModel: ObservableObject {
                         break
                     }
                 }
-                try? await Task.sleep(nanoseconds: 300_000_000)
+                // Backgrounded: space cycles out to stretch the limited
+                // beginBackgroundTask time budget further — see
+                // BackgroundPollController. Foreground keeps the normal
+                // near-continuous cadence.
+                let delay = BackgroundPollController.shared.isBackgrounded
+                    ? BackgroundPollController.backgroundPollInterval
+                    : 0.3
+                try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
             }
             self.log("Live data poll stopped after \(self.pollCycleCount) cycle(s), \(self.pollErrorCount) error(s).")
         }

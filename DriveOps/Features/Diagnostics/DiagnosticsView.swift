@@ -32,28 +32,37 @@ struct DiagnosticsView: View {
     }
 
     var body: some View {
-        if isWide {
-            NavigationSplitView {
-                codeList
-                    .navigationTitle("Diagnostics")
-                    .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .always), prompt: "Search codes or descriptions")
-                    .toolbar { toolbarContent }
-            } detail: {
-                if let selected = selectedCode,
-                   let item = allCodes.first(where: { $0.code == selected }) {
-                    TroubleCodeDetailView(code: item.code, ecu: item.ecu, vm: vm)
-                } else {
-                    ContentUnavailableView("Select a Code", systemImage: "stethoscope")
+        Group {
+            if isWide {
+                NavigationSplitView {
+                    codeList
+                        .navigationTitle("Diagnostics")
+                        .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .always), prompt: "Search codes or descriptions")
+                        .toolbar { toolbarContent }
+                } detail: {
+                    if let selected = selectedCode,
+                       let item = allCodes.first(where: { $0.code == selected }) {
+                        TroubleCodeDetailView(code: item.code, ecu: item.ecu, vm: vm)
+                    } else {
+                        ContentUnavailableView("Select a Code", systemImage: "stethoscope")
+                    }
+                }
+            } else {
+                NavigationStack {
+                    codeList
+                        .navigationTitle("Diagnostics")
+                        .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .always), prompt: "Search codes or descriptions")
+                        .toolbar { toolbarContent }
                 }
             }
-        } else {
-            NavigationStack {
-                codeList
-                    .navigationTitle("Diagnostics")
-                    .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .always), prompt: "Search codes or descriptions")
-                    .toolbar { toolbarContent }
-            }
         }
+        // Best-effort odometer probe: 01A6 was added in a later SAE J1979
+        // revision and plenty of vehicles won't answer it, so this asks for
+        // it alongside the normal poll while Diagnostics is open rather than
+        // gating it behind the user's dashboard PID selection — the card
+        // below only renders when a usable reading actually comes back.
+        .onAppear { vm.setTrackDemand(["01A6"], source: "diagnostics") }
+        .onDisappear { vm.setTrackDemand([], source: "diagnostics") }
     }
 
     // MARK: - Subviews
@@ -72,14 +81,32 @@ struct DiagnosticsView: View {
                             .foregroundStyle(.secondary)
                     }
                     if let manufacturer = vm.decodedVIN?.manufacturer {
-                        HStack {
-                            Text("Manufacturer")
-                                .foregroundStyle(.secondary)
-                            Spacer()
-                            Text(manufacturer)
-                                .font(.subheadline)
-                        }
+                        vehicleRow("Manufacturer", manufacturer)
                     }
+                    if let modelYear = vm.decodedVIN?.modelYear {
+                        vehicleRow("Model Year", "\(modelYear)")
+                    }
+                    if let country = vm.decodedVIN?.countryName {
+                        let flag = vm.decodedVIN?.flag.map { "\($0) " } ?? ""
+                        vehicleRow("Built In", "\(flag)\(country)")
+                    }
+                    if let obdProtocol = vm.obdInfo?.obdProtocol {
+                        vehicleRow("Protocol", obdProtocol.description)
+                    }
+                    if let ecus = vm.obdInfo?.ecuMap?.values, !ecus.isEmpty {
+                        vehicleRow("ECUs", Set(ecus.map(\.description)).sorted().joined(separator: ", "))
+                    }
+                    if let supported = vm.obdInfo?.supportedPIDs?.count {
+                        vehicleRow("Supported PIDs", "\(supported)")
+                    }
+                    // Not every vehicle answers this PID (see OdometerDecoder's
+                    // doc comment in the fork) — only shown once a usable
+                    // reading has actually come back, never a placeholder.
+                    if let odometer = vm.liveMetrics["01A6"], odometer.isUsable {
+                        vehicleRow("Odometer", MetricCatalog.format(odometer))
+                    }
+                } header: {
+                    Text("Vehicle")
                 }
             }
 
@@ -125,6 +152,14 @@ struct DiagnosticsView: View {
                         .tag(item.code)
                 }
             }
+        }
+    }
+
+    private func vehicleRow(_ label: String, _ value: String) -> some View {
+        HStack {
+            Text(label).foregroundStyle(.secondary)
+            Spacer()
+            Text(value).font(.subheadline)
         }
     }
 
@@ -215,6 +250,14 @@ private let mockTroubleCodes: [ECUID: [TroubleCode]] = [
 
 #Preview("No Codes") {
     DiagnosticsView(vm: .stub(state: .connectedToVehicle))
+}
+
+#Preview("Demo Vehicle Info") {
+    var info = try? JSONDecoder().decode(OBDInfo.self, from: Data(#"{"vin":"1HGBH41JXMN109186"}"#.utf8))
+    info?.supportedPIDs = PIDCatalog.allLivePIDs
+    info?.obdProtocol = .protocol6
+    info?.ecuMap = [0x00: .engine, 0x01: .transmission]
+    return DiagnosticsView(vm: .stub(state: .connectedToVehicle, info: info, liveData: ["Odometer": "84213.4 km"]))
 }
 
 #Preview("With Codes") {

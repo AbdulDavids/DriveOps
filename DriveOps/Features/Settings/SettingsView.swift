@@ -17,6 +17,21 @@ private struct ChangelogEntry: Identifiable {
 
 private let changelog: [ChangelogEntry] = [
     ChangelogEntry(
+        version: "0.3.3",
+        date: "Sep 2026",
+        items: [
+            "Live Activity (Dynamic Island + Lock Screen) showing live speed, RPM, and lap info while connected",
+            "Choose which sensors show on the Live Activity from Settings, defaulting to Engine RPM",
+            "Odometer reading (best-effort — not every vehicle reports it) shown on the Diagnostics vehicle card",
+            "Demo mode now includes a full mock vehicle profile (VIN, manufacturer, protocol, ECUs, odometer) so Diagnostics and the AI Mechanic have realistic vehicle context to work with",
+            "Dashboard now hides while disconnected — only the connect screen shows until you're connected",
+            "Disconnect moved into the navigation bar; the dashboard's large title only shows while disconnected",
+            "Long-press a dashboard sensor to remove it, replacing the old Edit mode",
+            "Fixed the live-data poll silently freezing shortly after backgrounding or locking the phone; it now polls at a reduced rate in the background to keep the Live Activity fresher for longer",
+            "Fixed BLE device-picker and \"connected to manufacturer\" actor-isolation build errors",
+        ]
+    ),
+    ChangelogEntry(
         version: "0.3.2",
         date: "Sep 2026",
         items: [
@@ -131,6 +146,16 @@ private struct SettingsPreferencesView: View {
     // on/off toggle setting.
     @AppStorage("onDeviceAIMode") private var aiModeRaw: String = OnDeviceAIMode.systemModel.rawValue
     @AppStorage("trackColorScheme") private var trackColorSchemeRaw = TrackColorScheme.rainbow.rawValue
+    @State private var liveActivityMetrics: [String] = LiveActivityMetricsStore.load()
+    @State private var showLiveActivityPicker = false
+
+    private var liveActivitySummary: String {
+        guard !liveActivityMetrics.isEmpty else { return "None" }
+        return liveActivityMetrics
+            .compactMap { PIDCatalog.command(named: $0) }
+            .map { MetricCatalog.displayName(for: $0) }
+            .joined(separator: ", ")
+    }
 
     private var aiMode: OnDeviceAIMode { OnDeviceAIMode(rawValue: aiModeRaw) ?? .systemModel }
 
@@ -178,6 +203,24 @@ private struct SettingsPreferencesView: View {
                     }
                 } header: {
                     Text("Track")
+                }
+
+                // Live Activity
+                Section {
+                    Button {
+                        showLiveActivityPicker = true
+                    } label: {
+                        HStack {
+                            Text("Metrics").foregroundStyle(.primary)
+                            Spacer()
+                            Text(liveActivitySummary).foregroundStyle(.secondary)
+                            Image(systemName: "chevron.right").font(.caption).foregroundStyle(.tertiary)
+                        }
+                    }
+                } header: {
+                    Text("Live Activity")
+                } footer: {
+                    Text("Shown on the Lock Screen and Dynamic Island while connected. Choose up to \(LiveActivityMetricsStore.maxSelected).")
                 }
 
                 // Diagnostics
@@ -230,6 +273,64 @@ private struct SettingsPreferencesView: View {
             // only had the on/off Toggle; every run after that is a no-op
             // because the new key already has a value by then.
             aiModeRaw = OnDeviceAIMode.loadInitial().rawValue
+        }
+        .sheet(isPresented: $showLiveActivityPicker) {
+            LiveActivityMetricsPicker(selected: $liveActivityMetrics)
+        }
+        .onChange(of: liveActivityMetrics) { _, newValue in
+            LiveActivityMetricsStore.save(newValue)
+        }
+    }
+}
+
+// MARK: - Live Activity Metrics Picker
+
+private struct LiveActivityMetricsPicker: View {
+    @Binding var selected: [String]
+    @State private var search = ""
+    @Environment(\.dismiss) private var dismiss
+
+    private var filtered: [OBDCommand] {
+        PIDCatalog.allLivePIDs.filter { pid in
+            search.isEmpty || MetricCatalog.displayName(for: pid).localizedCaseInsensitiveContains(search)
+        }
+    }
+
+    var body: some View {
+        NavigationStack {
+            List {
+                Section {
+                    ForEach(filtered, id: \.properties.command) { pid in
+                        let command = pid.properties.command
+                        let isSelected = selected.contains(command)
+                        Button {
+                            toggle(command)
+                        } label: {
+                            HStack {
+                                Text(MetricCatalog.displayName(for: pid)).foregroundStyle(.primary)
+                                Spacer()
+                                if isSelected { Image(systemName: "checkmark") }
+                            }
+                        }
+                        .disabled(!isSelected && selected.count >= LiveActivityMetricsStore.maxSelected)
+                    }
+                } footer: {
+                    Text("Choose up to \(LiveActivityMetricsStore.maxSelected). Shown in the order picked.")
+                }
+            }
+            .searchable(text: $search, prompt: "Name or PID")
+            .navigationTitle("Live Activity Metrics")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
+        }
+    }
+
+    private func toggle(_ command: String) {
+        if let index = selected.firstIndex(of: command) {
+            selected.remove(at: index)
+        } else {
+            guard selected.count < LiveActivityMetricsStore.maxSelected else { return }
+            selected.append(command)
         }
     }
 }

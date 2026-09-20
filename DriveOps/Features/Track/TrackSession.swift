@@ -5,6 +5,12 @@ import Combine
 /// change a lap. Stopping discards the unfinished lap, preserving completed laps.
 @MainActor
 final class TrackSession: ObservableObject {
+    /// The one lap-timing session, shared by the phone's Track view and the
+    /// CarPlay scene so a lap started on the phone (or vice versa) is
+    /// reflected on both — see `CarPlay/CarPlaySceneDelegate.swift`.
+    static let shared = TrackSession()
+
+
     @Published private(set) var lapStartedAt: TimeInterval?
     @Published private(set) var laps: [TimeInterval] = []
     var isRunning: Bool { lapStartedAt != nil }

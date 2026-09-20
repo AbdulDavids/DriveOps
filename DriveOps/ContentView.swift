@@ -17,7 +17,7 @@ struct ContentView: View {
     }
 
     init() {
-        _vm = StateObject(wrappedValue: OBDViewModel())
+        _vm = StateObject(wrappedValue: .shared)
     }
 
     var body: some View {
@@ -48,7 +48,11 @@ struct ContentView: View {
         .sheet(isPresented: $showWifiSheet) {
             WiFiInfoSheet(vm: vm, wifi: wifi, isPresented: $showWifiSheet)
         }
-        .onAppear { vm.autoConnectIfPossible() }
+        .onAppear {
+            vm.autoConnectIfPossible()
+            LiveActivityController.shared.start()
+            BackgroundPollController.shared.start()
+        }
     }
 }
 

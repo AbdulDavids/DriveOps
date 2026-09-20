@@ -59,6 +59,12 @@ enum MetricCatalog {
         "010B": .init(name: "Intake Manifold Pressure", category: "Air & fuel", decimals: 0, protocolRange: 0...255),
         "0133": .init(name: "Barometric Pressure", category: "Air & fuel", decimals: 0, protocolRange: 0...255),
         "010E": .init(name: "Timing Advance", category: "Engine", decimals: 1, protocolRange: -64...63.5),
+        // 01A6 was added in a later SAE J1979 revision than the rest of Mode
+        // 01 and is manufacturer-dependent — plenty of vehicles won't answer
+        // it at all (see DiagnosticsView, which only shows this when a
+        // reading actually came back). 999,999.9 km covers the decoder's
+        // full 4-byte range (0xFFFFFFFF * 0.1 km), not a real-world cap.
+        "01A6": .init(name: "Odometer", category: "Vehicle", decimals: 1, protocolRange: 0...999_999.9),
     ]
 
     static func definition(for command: OBDCommand) -> Definition {

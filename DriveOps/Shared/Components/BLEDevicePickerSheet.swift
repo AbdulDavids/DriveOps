@@ -21,7 +21,7 @@ struct BLEDevicePickerSheet: View {
     /// folded before matching) — narrows a noisy BLE scan to the devices
     /// someone actually came here for, with "Show All Devices" as the escape
     /// hatch for anything unusually named.
-    private static let likelyNameKeywords = ["obd", "elm", "vlink", "obdlink"]
+    nonisolated private static let likelyNameKeywords = ["obd", "elm", "vlink", "obdlink"]
 
     nonisolated private static func isLikelyOBD2Device(_ peripheral: CBPeripheral) -> Bool {
         guard let name = peripheral.name?.lowercased() else { return false }

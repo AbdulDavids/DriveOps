@@ -15,22 +15,29 @@ struct DashboardView: View {
 
     var isWide: Bool { hSizeClass == .regular }
 
+    private var isConnected: Bool { vm.connectionState == .connectedToVehicle }
+
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 20) {
-                    ConnectionCardView(vm: vm, showWifiSheet: $showWifiSheet, showBTSheet: $showBTSheet)
+                    if isConnected {
+                        // Connected: the status/disconnect card moves to the
+                        // toolbar (see .toolbar below) to free up this space
+                        // for the dashboard itself.
+                        LiveDataCardView(vm: vm, isWide: isWide)
 
-                    // The saved dashboard remains visible offline, so a user
-                    // can review/edit their layout before reconnecting.
-                    LiveDataCardView(vm: vm, isWide: isWide)
+                        if let info = vm.obdInfo {
+                            VehicleInfoCardView(info: info)
+                        }
+                    } else {
+                        // Not connected: nothing to show a dashboard/vehicle
+                        // info *for* yet, so only the connect UI renders.
+                        ConnectionCardView(vm: vm, showWifiSheet: $showWifiSheet, showBTSheet: $showBTSheet)
 
-                    if let info = vm.obdInfo {
-                        VehicleInfoCardView(info: info)
-                    }
-
-                    if vm.connectionState == .disconnected && !vm.isConnecting {
-                        DemoModePrompt { vm.connectDemo() }
+                        if vm.connectionState == .disconnected && !vm.isConnecting {
+                            DemoModePrompt { vm.connectDemo() }
+                        }
                     }
 
                     if let error = vm.errorMessage {
@@ -45,8 +52,22 @@ struct DashboardView: View {
             }
             .navigationTitle("DriveOps")
             #if os(iOS)
-            .navigationBarTitleDisplayMode(.large)
+            // The large title visually competes with the Disconnect button
+            // in the same bar once connected, so it collapses to inline only
+            // then — disconnected keeps the normal large DriveOps title.
+            .navigationBarTitleDisplayMode(isConnected ? .inline : .large)
             #endif
+            .toolbar {
+                if isConnected {
+                    ToolbarItem(placement: .primaryAction) {
+                        Button("Disconnect", role: .destructive) {
+                            vm.disconnect()
+                        }
+                        .buttonStyle(.bordered)
+                        .controlSize(.small)
+                    }
+                }
+            }
         }
     }
 }
