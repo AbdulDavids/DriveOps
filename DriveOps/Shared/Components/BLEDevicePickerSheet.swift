@@ -23,7 +23,7 @@ struct BLEDevicePickerSheet: View {
     /// hatch for anything unusually named.
     private static let likelyNameKeywords = ["obd", "elm", "vlink", "obdlink"]
 
-    private static func isLikelyOBD2Device(_ peripheral: CBPeripheral) -> Bool {
+    nonisolated private static func isLikelyOBD2Device(_ peripheral: CBPeripheral) -> Bool {
         guard let name = peripheral.name?.lowercased() else { return false }
         return Self.likelyNameKeywords.contains { name.contains($0) }
     }
