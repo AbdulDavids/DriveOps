@@ -8,6 +8,34 @@
 import XCTest
 
 final class DriveOpsUITests: XCTestCase {
+    @MainActor
+    func testTrackLandscapeAndFieldSelection() throws {
+        let app = XCUIApplication()
+        app.launchArguments += ["-hasSeenWelcome", "YES"]
+        app.launch()
+        app.tabBars.buttons["Track"].tap()
+        app.buttons["Enter Track"].tap()
+        XCUIDevice.shared.orientation = .landscapeLeft
+        defer { XCUIDevice.shared.orientation = .portrait }
+        XCTAssertTrue(app.buttons["START"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.tabBars.firstMatch.exists)
+        app.buttons["START"].tap()
+        XCTAssertTrue(app.buttons["LAP"].waitForExistence(timeout: 5))
+        app.buttons["LAP"].tap()
+        XCTAssertTrue(app.staticTexts["LAP 2"].exists)
+        let attachment = XCTAttachment(screenshot: app.screenshot())
+        attachment.name = "Track landscape"
+        attachment.lifetime = .keepAlways
+        add(attachment)
+        app.descendants(matching: .any)["track-field-0"].firstMatch.press(forDuration: 1)
+        XCTAssertTrue(app.navigationBars["Change field"].waitForExistence(timeout: 5))
+        app.buttons.containing(.staticText, identifier: "Engine RPM").firstMatch.tap()
+        XCTAssertTrue(app.buttons["Exit"].waitForExistence(timeout: 5))
+        app.buttons["Exit"].tap()
+        app.tabBars.buttons["Settings"].tap()
+        app.segmentedControls.buttons["Logs"].tap()
+        XCTAssertTrue(app.navigationBars["Logs"].exists)
+    }
 
     override func setUpWithError() throws {
         // Put setup code here. This method is called before the invocation of each test method in the class.

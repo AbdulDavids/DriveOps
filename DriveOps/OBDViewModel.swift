@@ -90,6 +90,14 @@ class OBDViewModel: ObservableObject {
         }
     }
 
+    // Track is a temporary subscriber. Its fields do not alter the user's
+    // persisted dashboard/poll selection and stop being requested on exit.
+    private var trackDemand: Set<OBDCommand> = []
+    func setTrackDemand(_ ids: Set<String>) {
+        trackDemand = Set(ids.compactMap { PIDCatalog.command(named: $0) })
+    }
+    var requestedPIDs: Set<OBDCommand> { selectedPIDs.union(trackDemand) }
+
     @Published private(set) var dashboardVehicleID = "default"
     @Published var dashboardMetricIDs: [String] = DashboardLayoutStore.load(for: "default") {
         didSet {
@@ -347,7 +355,7 @@ class OBDViewModel: ObservableObject {
                 // Read fresh each cycle (not captured once at loop start) so a
                 // picker edit mid-session takes effect on the very next tick
                 // without needing a reconnect — see selectedPIDs' didSet.
-                let pids = Array(self.selectedPIDs)
+                let pids = self.requestedPIDs.sorted { $0.properties.command < $1.properties.command }
                 guard !pids.isEmpty else {
                     // Only reachable transiently while the picker UI is mid-edit
                     // (PIDSelectionStore never persists an empty set as the
@@ -382,7 +390,7 @@ class OBDViewModel: ObservableObject {
                     var updatedHistory = self.metricHistory
                     var updatedMetrics = self.liveMetrics
                     let returnedCommands = Set(results.keys.map(\.properties.command))
-                    for command in self.selectedPIDs.map(\.properties.command) where !returnedCommands.contains(command) {
+                    for command in self.requestedPIDs.map(\.properties.command) where !returnedCommands.contains(command) {
                         guard let prior = updatedMetrics[command], now.timeIntervalSince(prior.updatedAt) > 2 else { continue }
                         updatedMetrics[command] = prior.markedStale()
                     }
@@ -431,7 +439,7 @@ class OBDViewModel: ObservableObject {
                 var updatedMetrics = self.liveMetrics
                 for (key, reading) in readings {
                     let metric = MetricCatalog.simulated(name: key, value: reading.value, unit: reading.unit, at: now)
-                    guard self.selectedPIDs.contains(where: { $0.properties.command == metric.id }) else { continue }
+                    guard self.requestedPIDs.contains(where: { $0.properties.command == metric.id }) else { continue }
                     updatedMetrics[metric.id] = metric
                     updated[metric.name] = MetricCatalog.format(metric)
                     let sample = MetricSample(timestamp: now, value: reading.value)

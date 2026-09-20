@@ -4,6 +4,14 @@ Status: in progress, 20 September 2026. Based on the current app source, pinned 
 
 ## Implementation progress
 
+### Track display (user-requested extension)
+
+- Replaced the root Logs tab with **Track**. Settings now contains Preferences / Logs tabs.
+- Track opens a full-screen dark instrument panel with a segmented RPM strip, four persistent configurable sensor slots, and a central lap timer. Landscape uses three columns; portrait remains usable and prompts rotation.
+- Long-press any sensor cell to choose from suggested fields or search the full catalogue. Track requests its sensors plus RPM while open, without changing dashboard selection.
+- Manual Start / Lap / Stop timing includes current lap, completed count, last lap, best lap, and confirmed reset. Timing uses a monotonic clock. Lap history lasts for the current app session; GPS lap detection is not implemented.
+- Added landscape/offline previews and deterministic lap-timing regression coverage. Sensor values are suppressed when disconnected, invalid or over two seconds old; the 0–8,000 RPM strip is labelled as an instrument scale, not a vehicle redline.
+
 ### Completed in the app
 
 - Added a typed `LiveMetric` boundary with a stable command identity, name, category, numeric value, unit, timestamp and quality state.
