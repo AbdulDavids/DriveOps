@@ -33,9 +33,10 @@ struct TrackPanel: View {
     @ObservedObject var session: TrackSession
     @Environment(\.dismiss) private var dismiss
     @AppStorage("trackSensorSlots") private var savedSlots = "010D,0105,0111,0104"
+    @AppStorage("trackColorScheme") private var colorSchemeRaw = TrackColorScheme.lime.rawValue
     @State private var editingSlot: Int?
     @State private var confirmReset = false
-    private let lime = Color(red: 0.83, green: 0.98, blue: 0.12)
+    private var scheme: TrackColorScheme { TrackColorScheme(rawValue: colorSchemeRaw) ?? .lime }
     private var slots: [String] {
         let ids = savedSlots.split(separator: ",").map(String.init)
         return ids.count == 4 && ids.allSatisfy({ PIDCatalog.command(named: $0) != nil }) ? ids : ["010D", "0105", "0111", "0104"]
@@ -45,44 +46,32 @@ struct TrackPanel: View {
         GeometryReader { geo in
             let landscape = geo.size.width > geo.size.height
             TimelineView(.periodic(from: .now, by: 0.05)) { context in
+                let accent = scheme.accent(at: context.date)
                 VStack(spacing: 8) {
                     HStack {
                         Label("TRACK", systemImage: "flag.checkered").font(.headline)
                         Text(vm.activeConnectionType == .demo ? "DEMO" : vm.connectionState.isConnected ? "CONNECTED" : "OFFLINE")
-                            .font(.caption.bold()).foregroundStyle(lime)
+                            .font(.caption.bold()).foregroundStyle(accent)
                         Spacer()
                         Button { dismiss() } label: { Label("Exit", systemImage: "xmark") }
                             .buttonStyle(.bordered).tint(.white)
                     }
-                    revStrip(at: context.date)
+                    revStrip(at: context.date, accent: accent)
                     if landscape {
                         HStack(spacing: 8) {
-                            sensorColumn(indices: [0, 1], at: context.date)
-                            timing.frame(maxWidth: .infinity)
-                            sensorColumn(indices: [2, 3], at: context.date)
+                            sensorColumn(indices: [0, 1], at: context.date, accent: accent)
+                            timing(accent: accent).frame(maxWidth: .infinity)
+                            sensorColumn(indices: [2, 3], at: context.date, accent: accent)
                         }.frame(maxHeight: .infinity)
                     } else {
                         Label("Rotate for the wide cockpit", systemImage: "iphone.gen3.radiowaves.left.and.right")
                             .font(.caption).foregroundStyle(.secondary)
-                        timing
+                        timing(accent: accent)
                         HStack(spacing: 8) {
-                            sensorColumn(indices: [0, 1], at: context.date)
-                            sensorColumn(indices: [2, 3], at: context.date)
+                            sensorColumn(indices: [0, 1], at: context.date, accent: accent)
+                            sensorColumn(indices: [2, 3], at: context.date, accent: accent)
                         }
                     }
-                    HStack {
-                        Text("HOLD A FIELD TO CHANGE IT").font(.system(size: 10, weight: .semibold, design: .monospaced)).foregroundStyle(.gray)
-                        Spacer()
-                        if session.isRunning {
-                            Button("Stop") { session.stop() }.buttonStyle(.bordered)
-                            Button("LAP", systemImage: "flag.checkered") { session.lap() }
-                                .buttonStyle(.borderedProminent).tint(lime).foregroundStyle(.black)
-                        } else {
-                            Button("Reset") { confirmReset = true }.buttonStyle(.bordered).disabled(session.laps.isEmpty)
-                            Button("START", systemImage: "play.fill") { session.start() }
-                                .buttonStyle(.borderedProminent).tint(lime).foregroundStyle(.black)
-                        }
-                    }.controlSize(.large)
                 }
                 .padding(12).frame(maxWidth: .infinity, maxHeight: .infinity)
             }
@@ -112,13 +101,13 @@ struct TrackPanel: View {
         return metric
     }
 
-    private func revStrip(at date: Date) -> some View {
+    private func revStrip(at date: Date, accent: Color) -> some View {
         let rpm = reading("010C", at: date)
         return VStack(spacing: 4) {
             HStack(spacing: 4) {
                 ForEach(0..<24) { index in
                     RoundedRectangle(cornerRadius: 2)
-                        .fill(Double(index) < (rpm?.value ?? 0) / 8000 * 24 ? (index < 16 ? lime : index < 21 ? .orange : .red) : Color.white.opacity(0.12))
+                        .fill(Double(index) < (rpm?.value ?? 0) / 8000 * 24 ? (index < 16 ? accent : index < 21 ? .orange : .red) : Color.white.opacity(0.12))
                 }
             }.frame(height: 12).accessibilityHidden(true)
             HStack {
@@ -129,7 +118,7 @@ struct TrackPanel: View {
         }
     }
 
-    private func sensorColumn(indices: [Int], at date: Date) -> some View {
+    private func sensorColumn(indices: [Int], at date: Date, accent: Color) -> some View {
         VStack(spacing: 8) {
             ForEach(indices, id: \.self) { index in
                 let id = slots[index]
@@ -139,7 +128,7 @@ struct TrackPanel: View {
                         .font(.system(size: 11, weight: .bold, design: .monospaced)).foregroundStyle(.gray)
                     Text(metric.map { MetricCatalog.format($0) } ?? "—")
                         .font(.system(size: 40, weight: .heavy, design: .rounded)).monospacedDigit()
-                        .lineLimit(1).minimumScaleFactor(0.4).foregroundStyle(lime)
+                        .lineLimit(1).minimumScaleFactor(0.4).foregroundStyle(accent)
                     if metric == nil { Text(vm.connectionState.isConnected ? "WAITING / NO FRESH DATA" : "OFFLINE").font(.system(size: 9)).foregroundStyle(.gray) }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading).padding(12)
@@ -155,19 +144,29 @@ struct TrackPanel: View {
         }.frame(maxWidth: .infinity)
     }
 
-    private var timing: some View {
+    private func timing(accent: Color) -> some View {
         VStack(spacing: 6) {
             Text(session.isRunning ? "LAP \(session.laps.count + 1)" : "\(session.laps.count) LAPS COMPLETED")
-                .font(.system(.headline, design: .monospaced)).foregroundStyle(lime)
+                .font(.system(.headline, design: .monospaced)).foregroundStyle(accent)
             Text(TrackSession.formatted(session.elapsed()))
                 .font(.system(size: 42, weight: .heavy, design: .monospaced)).minimumScaleFactor(0.4).lineLimit(1)
             Divider()
             timeRow("LAST LAP", session.lastLap)
             timeRow("BEST LAP", session.bestLap)
-            Text("MANUAL TIMING").font(.system(size: 9, design: .monospaced)).foregroundStyle(.gray)
+            HStack(spacing: 8) {
+                if session.isRunning {
+                    Button("Stop") { session.stop() }.buttonStyle(.bordered)
+                    Button("LAP", systemImage: "flag.checkered") { session.lap() }
+                        .buttonStyle(.borderedProminent).tint(accent).foregroundStyle(.black)
+                } else {
+                    Button("Reset") { confirmReset = true }.buttonStyle(.bordered).disabled(session.laps.isEmpty)
+                    Button("START", systemImage: "play.fill") { session.start() }
+                        .buttonStyle(.borderedProminent).tint(accent).foregroundStyle(.black)
+                }
+            }.controlSize(.large).padding(.top, 4)
         }.padding(12).frame(maxHeight: .infinity)
-            .background(lime.opacity(0.07), in: RoundedRectangle(cornerRadius: 6))
-            .overlay(RoundedRectangle(cornerRadius: 6).stroke(lime.opacity(0.5)))
+            .background(accent.opacity(0.07), in: RoundedRectangle(cornerRadius: 6))
+            .overlay(RoundedRectangle(cornerRadius: 6).stroke(accent.opacity(0.5)))
     }
 
     private func timeRow(_ name: String, _ value: TimeInterval?) -> some View {

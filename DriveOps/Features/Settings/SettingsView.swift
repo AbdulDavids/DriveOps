@@ -108,6 +108,7 @@ private struct SettingsPreferencesView: View {
     // never sees this hardcoded .systemModel default override their old
     // on/off toggle setting.
     @AppStorage("onDeviceAIMode") private var aiModeRaw: String = OnDeviceAIMode.systemModel.rawValue
+    @AppStorage("trackColorScheme") private var trackColorSchemeRaw = TrackColorScheme.lime.rawValue
 
     private var aiMode: OnDeviceAIMode { OnDeviceAIMode(rawValue: aiModeRaw) ?? .systemModel }
 
@@ -141,6 +142,20 @@ private struct SettingsPreferencesView: View {
                 Section("Connection") {
                     Button("Demo Mode") { vm.connectDemo() }
                         .disabled(vm.isConnecting || vm.connectionState == .connectedToVehicle)
+                }
+
+                // Track
+                Section {
+                    Picker("Color Scheme", selection: $trackColorSchemeRaw) {
+                        ForEach(TrackColorScheme.allCases) { scheme in
+                            HStack {
+                                Circle().fill(scheme.accent).frame(width: 12, height: 12)
+                                Text(scheme.displayName)
+                            }.tag(scheme.rawValue)
+                        }
+                    }
+                } header: {
+                    Text("Track")
                 }
 
                 // Diagnostics
