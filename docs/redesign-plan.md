@@ -11,10 +11,13 @@ Status: in progress, 20 September 2026. Based on the current app source, pinned 
 - Routed both real and demo readings through that boundary while retaining the existing string data temporarily for older views.
 - Added a bounded RPM recovery guard for the pinned dependency's known batch-decoding defect. It only activates when the decoded value contains the `0C` RPM PID echo as its top byte; it extracts the two payload bytes and marks the reading as checked.
 - Rejected non-finite and protocol-out-of-range readings before they enter normal history.
+- Replaced the live-data list with a saved, ordered Dashboard of chosen sensor tiles. Tiles show a formatted value, unit, short trend and explicit waiting/last-reading state.
+- Reworked the old PID selector into an **Add sensors** browser. It uses friendly canonical names, preserves the advanced PID identifier as secondary detail, shows vehicle support, and adds/removes a dashboard sensor in one action.
+- Added dashboard edit mode for removing and reordering sensor tiles, plus a calmer sensor detail view with readable history and min/average/max.
 
 ### Still to implement
 
-- Replace the legacy string-based dashboard, picker, gauges, detail and comparison views with the typed metric views described below.
+- Replace the remaining legacy gauge-grid, chart and comparison views with typed metric views. The primary dashboard, picker and detail view now use typed metrics; the legacy views remain as unused migration code.
 - Repair the dependency's batch decoder at its source and add raw-frame replay tests. The current app guard keeps the RPM display useful until that source-level fix is available.
 - Add freshness, stale-state handling, per-vehicle dashboard layouts and demand-based polling.
 

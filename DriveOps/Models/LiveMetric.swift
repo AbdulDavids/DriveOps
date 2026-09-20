@@ -66,6 +66,11 @@ enum MetricCatalog {
 
     static func displayName(for command: OBDCommand) -> String { definition(for: command).name }
 
+    static func placeholder(for command: OBDCommand) -> LiveMetric {
+        let definition = definition(for: command)
+        return .init(id: command.properties.command, name: definition.name, category: definition.category, value: nil, unit: "", updatedAt: .distantPast, quality: .invalid("Waiting for a reading."))
+    }
+
     /// Normalises a decoded dependency result into a stable app reading. This is
     /// deliberately the only boundary where a dependency's labels/value quirks
     /// are interpreted; views receive typed values rather than strings.

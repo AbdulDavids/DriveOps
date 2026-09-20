@@ -29,18 +29,6 @@ struct DashboardView: View {
                         LiveDataCardView(vm: vm, isWide: isWide)
                     }
 
-                    // KeyGaugesRow's own per-gauge `if let` already hides an
-                    // individual gauge when its PID isn't selected — this gate
-                    // is for the row as a whole, so deselecting all three of
-                    // its fixed metrics (RPM/Speed/Engine Load) removes the
-                    // row entirely instead of leaving an empty gap where it
-                    // used to be. `!liveData.isEmpty` alone wasn't enough:
-                    // other selected PIDs would keep it non-empty while none
-                    // of them are ones this row actually displays.
-                    if isWide && KeyGaugesRow.hasAnyKey(in: vm.liveData) {
-                        KeyGaugesRow(liveData: vm.liveData)
-                    }
-
                     if let info = vm.obdInfo {
                         VehicleInfoCardView(info: info)
                     }

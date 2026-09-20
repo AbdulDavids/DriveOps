@@ -53,14 +53,38 @@ enum PIDSelectionStore {
             return PIDCatalog.defaultSelection
         }
         let savedSet = Set(saved)
-        let restored = PIDCatalog.allLivePIDs.filter { savedSet.contains($0.properties.command) }
-        // An empty save could mean "user deselected everything" or "nothing
-        // was ever saved" — since polling with zero PIDs is never useful,
-        // treat an empty result as "not yet configured" and fall back.
-        return restored.isEmpty ? PIDCatalog.defaultSelection : Set(restored)
+        // A stored empty array is an intentional empty dashboard. Only the
+        // absence of this key means a first launch that needs essentials.
+        return Set(PIDCatalog.allLivePIDs.filter { savedSet.contains($0.properties.command) })
     }
 
     static func save(_ pids: Set<OBDCommand>) {
         UserDefaults.standard.set(pids.map(\.properties.command), forKey: key)
+    }
+}
+
+/// Ordered dashboard membership is distinct from the polling set. The order
+/// is the user's layout; polling may temporarily include a sensor opened in a
+/// detail view in a later iteration.
+enum DashboardLayoutStore {
+    private static let key = "dashboardMetricCommands"
+
+    static func load() -> [String] {
+        guard let saved = UserDefaults.standard.stringArray(forKey: key) else {
+            return PIDCatalog.defaultSelection
+                .map(\.properties.command)
+                .sorted()
+        }
+        return saved
+    }
+
+    static func save(_ commands: [String]) {
+        UserDefaults.standard.set(commands, forKey: key)
+    }
+}
+
+extension PIDCatalog {
+    static func command(named command: String) -> OBDCommand? {
+        allLivePIDs.first { $0.properties.command == command }
     }
 }

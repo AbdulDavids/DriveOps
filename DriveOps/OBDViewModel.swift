@@ -90,6 +90,39 @@ class OBDViewModel: ObservableObject {
         }
     }
 
+    @Published var dashboardMetricIDs: [String] = DashboardLayoutStore.load() {
+        didSet {
+            guard dashboardMetricIDs != oldValue else { return }
+            DashboardLayoutStore.save(dashboardMetricIDs)
+        }
+    }
+
+    func addToDashboard(_ pid: OBDCommand) {
+        if !dashboardMetricIDs.contains(pid.properties.command) {
+            dashboardMetricIDs.append(pid.properties.command)
+        }
+        selectedPIDs.insert(pid)
+    }
+
+    func removeFromDashboard(_ command: String) {
+        dashboardMetricIDs.removeAll { $0 == command }
+        if let pid = PIDCatalog.command(named: command) {
+            selectedPIDs.remove(pid)
+        }
+        liveData = liveData.filter { key, _ in
+            dashboardMetricIDs.contains { PIDCatalog.command(named: $0).map { MetricCatalog.displayName(for: $0) == key } ?? false }
+        }
+    }
+
+    func moveDashboardMetric(from source: IndexSet, to destination: Int) {
+        let moving = source.map { dashboardMetricIDs[$0] }
+        for index in source.sorted(by: >) {
+            dashboardMetricIDs.remove(at: index)
+        }
+        let adjustedDestination = destination - source.filter { $0 < destination }.count
+        dashboardMetricIDs.insert(contentsOf: moving, at: adjustedDestination)
+    }
+
     private let historyLimit = 120
     private let logLimit = 500
     private var cancellables = Set<AnyCancellable>()

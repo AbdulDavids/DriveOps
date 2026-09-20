@@ -42,20 +42,20 @@ struct PIDPickerView: View {
                     .buttonStyle(.plain)
                 }
             } header: {
-                Text("Live Data PIDs")
+                Text("Sensors")
             } footer: {
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("\(vm.selectedPIDs.count) of \(PIDCatalog.allLivePIDs.count) selected. Changes apply immediately — no need to reconnect.")
+                    Text("\(vm.dashboardMetricIDs.count) sensors on your dashboard. Add or remove a sensor here; updates apply immediately.")
                     if requestsPerCycle > 1 {
                         Text("That's \(requestsPerCycle) requests per poll cycle (adapters answer at most \(Self.pidsPerRequest) PIDs per request) — more selected PIDs means slower updates.")
                     }
                     if supportedByVehicle != nil {
-                        Text("A star marks PIDs your connected vehicle reported as supported. Unmarked PIDs may still work — vehicles don't always report every PID they answer.")
+                        Text("A star means your vehicle reported the sensor as supported. Unmarked sensors can still work on some vehicles.")
                     }
                 }
             }
         }
-        .navigationTitle("PID Selection")
+        .navigationTitle("Add sensors")
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
         #endif
@@ -65,9 +65,17 @@ struct PIDPickerView: View {
             }
             ToolbarItem(placement: .primaryAction) {
                 Menu {
-                    Button("Select All") { vm.selectedPIDs = Set(PIDCatalog.allLivePIDs) }
-                    Button("Restore Defaults") { vm.selectedPIDs = PIDCatalog.defaultSelection }
-                    Button("Deselect All", role: .destructive) { vm.selectedPIDs = [] }
+                    Button("Add all sensors") {
+                        PIDCatalog.allLivePIDs.forEach { vm.addToDashboard($0) }
+                    }
+                    Button("Restore essentials") {
+                        vm.dashboardMetricIDs = PIDCatalog.defaultSelection.map(\.properties.command).sorted()
+                        vm.selectedPIDs = PIDCatalog.defaultSelection
+                    }
+                    Button("Remove all sensors", role: .destructive) {
+                        vm.dashboardMetricIDs = []
+                        vm.selectedPIDs = []
+                    }
                 } label: {
                     Image(systemName: "ellipsis.circle")
                 }
@@ -76,22 +84,22 @@ struct PIDPickerView: View {
     }
 
     private func toggle(_ pid: OBDCommand) {
-        if vm.selectedPIDs.contains(pid) {
-            vm.selectedPIDs.remove(pid)
+        if vm.dashboardMetricIDs.contains(pid.properties.command) {
+            vm.removeFromDashboard(pid.properties.command)
         } else {
-            vm.selectedPIDs.insert(pid)
+            vm.addToDashboard(pid)
         }
     }
 
     private func row(for pid: OBDCommand) -> some View {
         HStack(spacing: 12) {
-            Image(systemName: vm.selectedPIDs.contains(pid) ? "checkmark.circle.fill" : "circle")
-                .foregroundStyle(vm.selectedPIDs.contains(pid) ? Color.accentColor : .secondary)
+            Image(systemName: vm.dashboardMetricIDs.contains(pid.properties.command) ? "checkmark.circle.fill" : "circle")
+                .foregroundStyle(vm.dashboardMetricIDs.contains(pid.properties.command) ? Color.accentColor : .secondary)
                 .font(.title3)
 
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 4) {
-                    Text(pid.properties.description)
+                Text(MetricCatalog.displayName(for: pid))
                         .foregroundStyle(.primary)
                     if let supportedByVehicle, supportedByVehicle.contains(pid) {
                         Image(systemName: "star.fill")
@@ -99,7 +107,7 @@ struct PIDPickerView: View {
                             .foregroundStyle(.yellow)
                     }
                 }
-                Text(pid.properties.command)
+                Text("\(pid.properties.description) · \(pid.properties.command)")
                     .font(.caption.monospaced())
                     .foregroundStyle(.secondary)
             }
