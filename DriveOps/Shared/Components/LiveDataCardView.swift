@@ -4,6 +4,7 @@
 //
 
 import SwiftUI
+import SwiftOBD2
 
 /// Dashboard membership is a deliberate user choice, independent of what is
 /// temporarily being polled or compared.
@@ -105,6 +106,7 @@ private struct MetricTile: View {
     }
 }
 
+@MainActor
 private struct DashboardEditor: View {
     @ObservedObject var vm: OBDViewModel
 
@@ -203,3 +205,41 @@ private struct DetailStatistic: View {
         }.frame(maxWidth: .infinity, alignment: .leading)
     }
 }
+
+#if DEBUG
+private func redesignPreviewViewModel() -> OBDViewModel {
+    let vm = OBDViewModel.stub(
+        state: .connectedToVehicle,
+        liveData: [
+            "Engine RPM": "1,073 rpm",
+            "Vehicle Speed": "87 km/h",
+            "Coolant Temperature": "91 °C",
+            "Engine Load": "42 %",
+        ]
+    )
+    vm.dashboardMetricIDs = ["010C", "010D", "0105", "0104"]
+    return vm
+}
+
+#Preview("Redesigned dashboard") {
+    NavigationStack {
+        ScrollView {
+            LiveDataCardView(vm: redesignPreviewViewModel())
+                .padding()
+        }
+        .navigationTitle("DriveOps")
+    }
+}
+
+#Preview("Sensor detail") {
+    SensorDetailView(
+        metric: MetricCatalog.simulated(name: "Engine RPM", value: 1_073, unit: "rpm"),
+        history: (0..<24).map { index in
+            MetricSample(
+                timestamp: Date.now.addingTimeInterval(Double(index - 24) * 3),
+                value: 850 + Double(index) * 18 + Double(index % 4) * 35
+            )
+        }
+    )
+}
+#endif
