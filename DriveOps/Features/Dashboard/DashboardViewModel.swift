@@ -5,6 +5,7 @@
 
 import SwiftUI
 import SwiftOBD2
+import VIN
 
 @MainActor
 extension OBDViewModel {
