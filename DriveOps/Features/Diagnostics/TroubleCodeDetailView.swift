@@ -6,7 +6,6 @@
 import SwiftUI
 import SwiftOBD2
 import FoundationModels
-import AppleIntelligenceForSwiftUI
 
 struct TroubleCodeDetailView: View {
     let code: TroubleCode
@@ -25,12 +24,6 @@ struct TroubleCodeDetailView: View {
     @State private var explanation: String = ""
     @State private var isGenerating: Bool = false
     @State private var explanationError: String? = nil
-    // Which model actually produced `explanation` — set after a successful
-    // generation, distinct from `aiMode` (the user's setting) because
-    // Private Cloud Compute mode falls back to the on-device model when PCC
-    // itself is unavailable (no network, quota hit, ineligible device). The
-    // footer needs to say what actually ran, not just what was requested.
-    @State private var usedPrivateCloudCompute = false
 
     var codePrefix: String { String(code.code.prefix(1)) }
 
@@ -134,9 +127,7 @@ struct TroubleCodeDetailView: View {
                 ))
                 .fontWeight(.semibold)
         } footer: {
-            Text(usedPrivateCloudCompute
-                 ? "Generated via Apple's Private Cloud Compute. May not be accurate."
-                 : "Generated on-device. May not be accurate.")
+            Text("Generated on-device. May not be accurate.")
                 .font(.caption)
         }
     }
@@ -162,72 +153,20 @@ struct TroubleCodeDetailView: View {
         return prompt
     }
 
+    // Private Cloud Compute (Apple's server-side model, iOS 27+) is not
+    // wired up: OnDeviceAIMode.selectableCases already excludes
+    // .privateCloudCompute from the picker (the app doesn't hold the
+    // required managed entitlement, and calling
+    // PrivateCloudComputeLanguageModel() without it crashes the process
+    // rather than throwing — see OnDeviceAIMode's doc comment). Every mode
+    // reaching this point goes straight to the on-device model.
     @available(iOS 26, *)
     private func generateExplanation() async {
         isGenerating = true
         explanation = ""
         explanationError = nil
-        usedPrivateCloudCompute = false
-
-        // Private Cloud Compute is a separate model class (network-dependent,
-        // quota-limited, iOS 27+) rather than a variant of the on-device
-        // model — see OnDeviceAIMode's doc comment. When the user picked it
-        // but it isn't actually usable right now, fall back to the on-device
-        // model rather than failing outright: PCC being down shouldn't mean
-        // "no explanation" when the always-available model could still
-        // answer. `.systemModel` mode skips straight to that same path.
-        //
-        // `OnDeviceAIMode.selectableCases` already excludes .privateCloudCompute
-        // from the picker (see its doc comment: the app doesn't hold the
-        // required managed entitlement, and calling
-        // PrivateCloudComputeLanguageModel() without it crashes the process
-        // rather than throwing). This `aiMode == .privateCloudCompute` check
-        // is deliberately kept as a second line of defense — e.g. a device
-        // that persisted this value before that fix shipped — even though
-        // `loadInitial()` should already have downgraded it by the time this
-        // runs. Never remove this guard without re-confirming the entitlement
-        // has actually been granted and added to DriveOps.entitlements.
-        if aiMode == .privateCloudCompute, #available(iOS 27, *) {
-            if await generateWithPrivateCloudCompute() {
-                isGenerating = false
-                return
-            }
-        }
         await generateWithSystemModel()
         isGenerating = false
-    }
-
-    /// - Returns: `true` if PCC actually produced a response (including a
-    ///   content-guardrail refusal, which is still an answer from PCC, just
-    ///   not a usable one) — `false` only when PCC itself couldn't be
-    ///   reached, so the caller knows to fall back to the on-device model.
-    @available(iOS 27, *)
-    private func generateWithPrivateCloudCompute() async -> Bool {
-        let model = PrivateCloudComputeLanguageModel()
-        guard model.isAvailable else { return false }
-
-        let session = LanguageModelSession(model: model, instructions: Self.instructions)
-        do {
-            let stream = session.streamResponse(to: explanationPrompt)
-            for try await snapshot in stream {
-                explanation = snapshot.content
-            }
-            usedPrivateCloudCompute = true
-            return true
-        } catch LanguageModelSession.GenerationError.guardrailViolation,
-                LanguageModelSession.GenerationError.refusal {
-            explanationError = "Could not generate explanation for this code."
-            usedPrivateCloudCompute = true
-            return true
-        } catch is PrivateCloudComputeLanguageModel.Error {
-            // Network failure / quota reached / service unavailable — PCC's
-            // own transport-level errors. These are exactly the cases worth
-            // quietly retrying on-device rather than showing an error for,
-            // since the fallback model can very likely still answer.
-            return false
-        } catch {
-            return false
-        }
     }
 
     @available(iOS 26, *)
