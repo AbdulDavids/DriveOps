@@ -369,6 +369,11 @@ class OBDViewModel: ObservableObject {
                     var updated = self.liveData
                     var updatedHistory = self.metricHistory
                     var updatedMetrics = self.liveMetrics
+                    let returnedCommands = Set(results.keys.map(\.properties.command))
+                    for command in self.selectedPIDs.map(\.properties.command) where !returnedCommands.contains(command) {
+                        guard let prior = updatedMetrics[command], now.timeIntervalSince(prior.updatedAt) > 2 else { continue }
+                        updatedMetrics[command] = prior.markedStale()
+                    }
                     for (cmd, measurement): (OBDCommand, MeasurementResult) in results {
                         let metric = MetricCatalog.reading(for: cmd, result: measurement, at: now)
                         let key = metric.name

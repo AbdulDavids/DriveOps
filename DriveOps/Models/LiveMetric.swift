@@ -34,6 +34,10 @@ struct LiveMetric: Identifiable, Equatable {
     let quality: MetricQuality
 
     var isUsable: Bool { value != nil && quality != .stale }
+
+    func markedStale() -> LiveMetric {
+        .init(id: id, name: name, category: category, value: value, unit: unit, updatedAt: updatedAt, quality: .stale)
+    }
 }
 
 enum MetricCatalog {

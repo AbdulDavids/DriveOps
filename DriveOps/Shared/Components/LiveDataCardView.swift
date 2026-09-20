@@ -249,4 +249,10 @@ private func redesignPreviewViewModel() -> OBDViewModel {
         }
     )
 }
+
+#Preview("Waiting for a sensor") {
+    let vm = OBDViewModel.stub(state: .connectedToVehicle)
+    vm.dashboardMetricIDs = ["010C"]
+    return LiveDataCardView(vm: vm).padding()
+}
 #endif
