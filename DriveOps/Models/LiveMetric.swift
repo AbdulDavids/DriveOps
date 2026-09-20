@@ -9,6 +9,7 @@ import SwiftOBD2
 enum MetricQuality: Equatable {
     case live
     case recovered
+    case waiting
     case invalid(String)
     case stale
 
@@ -16,6 +17,7 @@ enum MetricQuality: Equatable {
         switch self {
         case .live: return nil
         case .recovered: return "Checked"
+        case .waiting: return "Waiting"
         case .invalid: return "Unavailable"
         case .stale: return "Last reading"
         }
@@ -68,7 +70,7 @@ enum MetricCatalog {
 
     static func placeholder(for command: OBDCommand) -> LiveMetric {
         let definition = definition(for: command)
-        return .init(id: command.properties.command, name: definition.name, category: definition.category, value: nil, unit: "", updatedAt: .distantPast, quality: .invalid("Waiting for a reading."))
+        return .init(id: command.properties.command, name: definition.name, category: definition.category, value: nil, unit: "", updatedAt: .distantPast, quality: .waiting)
     }
 
     /// Normalises a decoded dependency result into a stable app reading. This is

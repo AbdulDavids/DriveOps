@@ -14,6 +14,7 @@ Status: in progress, 20 September 2026. Based on the current app source, pinned 
 - Replaced the live-data list with a saved, ordered Dashboard of chosen sensor tiles. Tiles show a formatted value, unit, short trend and explicit waiting/last-reading state.
 - Reworked the old PID selector into an **Add sensors** browser. It uses friendly canonical names, preserves the advanced PID identifier as secondary detail, shows vehicle support, and adds/removes a dashboard sensor in one action.
 - Added dashboard edit mode for removing and reordering sensor tiles, plus a calmer sensor detail view with readable history and min/average/max.
+- Added distinct waiting, checked, invalid and last-reading states so a missing response is not presented as either zero or a current value.
 
 ### Still to implement
 
