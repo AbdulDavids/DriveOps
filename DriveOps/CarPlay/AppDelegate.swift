@@ -2,13 +2,14 @@
 //  AppDelegate.swift
 //  DriveOps
 //
-//  A UISceneSession-owning delegate is required to advertise the CarPlay
-//  scene configuration declared in Info.plist — SwiftUI's plain `App`
-//  lifecycle has no hook for that, so this bridges in via
-//  @UIApplicationDelegateAdaptor in DriveOpsApp.
+//  CarPlay support is paused: the com.apple.developer.carplay-parking
+//  entitlement it needs requires Apple's approval before it can be included
+//  in a provisioning profile at all, and Xcode refuses to build for a device
+//  with it present but unapproved. CarPlaySceneDelegate.swift is left in
+//  place, just not registered here — re-add the CPTemplateApplicationScene
+//  branch and the entitlement once Apple grants access.
 //
 
-import CarPlay
 import UIKit
 
 final class AppDelegate: NSObject, UIApplicationDelegate {
@@ -17,11 +18,6 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         configurationForConnecting connectingSceneSession: UISceneSession,
         options: UIScene.ConnectionOptions
     ) -> UISceneConfiguration {
-        if connectingSceneSession.role == .carTemplateApplication {
-            let config = UISceneConfiguration(name: "CarPlay Configuration", sessionRole: connectingSceneSession.role)
-            config.delegateClass = CarPlaySceneDelegate.self
-            return config
-        }
-        return UISceneConfiguration(name: "Default Configuration", sessionRole: connectingSceneSession.role)
+        UISceneConfiguration(name: "Default Configuration", sessionRole: connectingSceneSession.role)
     }
 }

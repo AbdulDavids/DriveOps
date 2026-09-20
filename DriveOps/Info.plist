@@ -28,15 +28,6 @@
 					<string>Default Configuration</string>
 				</dict>
 			</array>
-			<key>CPTemplateApplicationSceneSessionRoleApplication</key>
-			<array>
-				<dict>
-					<key>UISceneConfigurationName</key>
-					<string>CarPlay Configuration</string>
-					<key>UISceneDelegateClassName</key>
-					<string>DriveOps.CarPlaySceneDelegate</string>
-				</dict>
-			</array>
 		</dict>
 	</dict>
 </dict>
