@@ -150,6 +150,12 @@ class OBDViewModel: ObservableObject {
     private let simulator = DrivingSimulator()
     private var pollCycleCount = 0
     private var pollErrorCount = 0
+    /// Consecutive (not lifetime) poll failures — reset on any successful
+    /// cycle. A handful of transient BLE hiccups in a row (a dropped write,
+    /// a momentary link glitch) shouldn't need a full reconnect, but a truly
+    /// dead connection shouldn't spin forever either.
+    private var consecutivePollErrorCount = 0
+    private static let maxConsecutivePollErrors = 5
 
     init(bindServiceState: Bool = true) {
         if bindServiceState {
@@ -372,6 +378,7 @@ class OBDViewModel: ObservableObject {
         log("Starting live data poll for \(selectedPIDs.count) PID(s): \(selectedPIDs.map(\.properties.description).sorted().joined(separator: ", "))")
         pollCycleCount = 0
         pollErrorCount = 0
+        consecutivePollErrorCount = 0
         pollTask = Task {
             while !Task.isCancelled {
                 // Read fresh each cycle (not captured once at loop start) so a
@@ -390,6 +397,7 @@ class OBDViewModel: ObservableObject {
                 do {
                     let results = try await service.requestPIDs(pids, unit: .metric)
                     self.pollCycleCount += 1
+                    self.consecutivePollErrorCount = 0
                     let elapsedMs = Date().timeIntervalSince(cycleStart) * 1000
 
                     if results.isEmpty {
@@ -434,12 +442,23 @@ class OBDViewModel: ObservableObject {
                     self.liveMetrics = updatedMetrics
                 } catch {
                     self.pollErrorCount += 1
-                    if !Task.isCancelled {
-                        self.log("Poll error (cycle #\(self.pollCycleCount), \(self.pollErrorCount) total errors): \(error.localizedDescription)")
-                        AppLogger.liveData.error("poll error cycle=\(self.pollCycleCount) totalErrors=\(self.pollErrorCount) error=\(String(describing: error), privacy: .public)")
-                        self.errorMessage = error.localizedDescription
+                    self.consecutivePollErrorCount += 1
+                    guard !Task.isCancelled else { break }
+                    self.log("Poll error (cycle #\(self.pollCycleCount), \(self.pollErrorCount) total errors, \(self.consecutivePollErrorCount) consecutive): \(error.localizedDescription)")
+                    AppLogger.liveData.error("poll error cycle=\(self.pollCycleCount) totalErrors=\(self.pollErrorCount) consecutive=\(self.consecutivePollErrorCount) error=\(String(describing: error), privacy: .public)")
+                    self.errorMessage = error.localizedDescription
+                    // A handful of consecutive failures in a row means the
+                    // connection itself is gone (not a single dropped PID —
+                    // that no longer throws here at all, see requestPIDs'
+                    // NO DATA handling), so stop rather than spin forever
+                    // against a dead link. Anything short of that is worth
+                    // riding out: a transient BLE write/notify hiccup
+                    // shouldn't cost the whole session and force a
+                    // reconnect.
+                    guard self.consecutivePollErrorCount < Self.maxConsecutivePollErrors else {
+                        self.log("Stopping live data poll after \(self.consecutivePollErrorCount) consecutive errors.")
+                        break
                     }
-                    break
                 }
                 try? await Task.sleep(nanoseconds: 300_000_000)
             }
