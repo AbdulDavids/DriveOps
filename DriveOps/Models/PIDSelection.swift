@@ -32,6 +32,22 @@ enum PIDCatalog {
         .mode1(.coolantTemp),
         .mode1(.engineLoad),
     ]
+
+    static let warmUpSelection: Set<OBDCommand> = [
+        .mode1(.rpm),
+        .mode1(.coolantTemp),
+        .mode1(.intakeTemp),
+        .mode1(.engineLoad),
+    ]
+
+    static let airAndFuelSelection: Set<OBDCommand> = [
+        .mode1(.rpm),
+        .mode1(.engineLoad),
+        .mode1(.throttlePos),
+        .mode1(.maf),
+        .mode1(.intakePressure),
+        .mode1(.barometricPressure),
+    ]
 }
 
 /// Persists the user's PID selection across launches as their hex command

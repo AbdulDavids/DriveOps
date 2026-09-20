@@ -122,10 +122,11 @@ struct PIDPickerView: View {
             ToolbarItem(placement: .primaryAction) {
                 Menu {
                     Button("Add all visible") { filtered.forEach { vm.addToDashboard($0) } }
-                    Button("Restore essentials") {
-                        vm.dashboardMetricIDs = PIDCatalog.defaultSelection.map(\.properties.command).sorted()
-                        vm.selectedPIDs = PIDCatalog.defaultSelection
-                    }
+                    Divider()
+                    Button("Essentials") { apply(PIDCatalog.defaultSelection) }
+                    Button("Warm-up") { apply(PIDCatalog.warmUpSelection) }
+                    Button("Air & fuel") { apply(PIDCatalog.airAndFuelSelection) }
+                    Divider()
                     Button("Remove all sensors", role: .destructive) {
                         vm.dashboardMetricIDs = []
                         vm.selectedPIDs = []
@@ -141,6 +142,11 @@ struct PIDPickerView: View {
         } else {
             vm.addToDashboard(pid)
         }
+    }
+
+    private func apply(_ selection: Set<OBDCommand>) {
+        vm.dashboardMetricIDs = selection.map(\.properties.command).sorted()
+        vm.selectedPIDs = selection
     }
 
     private func availability(for pid: OBDCommand) -> (String, Color) {

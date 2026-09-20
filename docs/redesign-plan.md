@@ -22,6 +22,7 @@ Status: in progress, 20 September 2026. Based on the current app source, pinned 
 - Added a persistent sensor-selection count and request-group warning to the catalogue. Selecting more than six sensors is allowed, but the app now makes the slower multi-request refresh cost explicit.
 - Reduced the first dashboard to four essential sensors, retained saved layouts when disconnected, and labelled them **Connect to update** until live data resumes. Demo mode now honours the same chosen sensors as a real connection. An offline dashboard preview is included.
 - Added regression tests for the exact RPM PID-echo recovery shape and for preserving a last valid value when a reading becomes stale.
+- Added one-tap **Essentials**, **Warm-up**, and **Air & fuel** starting layouts to the sensor catalogue.
 
 ### Still to implement
 
