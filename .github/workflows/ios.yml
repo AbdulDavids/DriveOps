@@ -23,7 +23,7 @@ jobs:
           # at more than one installed runtime and none matches "latest" —
           # this is what broke the workflow previously. Picking a specific
           # simulator's `id:` (a UUID) sidesteps name/OS matching entirely.
-          device_id=$(xcodebuild -showdestinations -project DriveOps.xcodeproj -scheme DriveOps 2>/dev/null \
+          device_id=$(xcodebuild -showdestinations -project DriveOps.xcodeproj -scheme DriveOps 2>&1 \
             | grep 'platform:iOS Simulator' \
             | grep 'name:iPhone' \
             | grep -v placeholder \
