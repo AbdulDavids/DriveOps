@@ -14,6 +14,7 @@ struct LiveDataCardView: View {
 
     @State private var isEditing = false
     @State private var showSensors = false
+    @State private var showComparison = false
     @State private var selectedMetric: LiveMetric?
 
     private var dashboardMetrics: [LiveMetric] {
@@ -53,15 +54,21 @@ struct LiveDataCardView: View {
                         }
                     }
                 }
-                Button { showSensors = true } label: {
-                    Label("Add sensor", systemImage: "plus").frame(maxWidth: .infinity)
+                HStack {
+                    Button { showSensors = true } label: { Label("Add sensor", systemImage: "plus") }
+                        .buttonStyle(.bordered)
+                    Spacer()
+                    if dashboardMetrics.count >= 2 {
+                        Button { showComparison = true } label: { Label("Compare", systemImage: "chart.line.uptrend.xyaxis") }
+                            .buttonStyle(.bordered)
+                    }
                 }
-                .buttonStyle(.bordered)
             }
         }
         .padding()
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 18))
         .sheet(isPresented: $showSensors) { NavigationStack { PIDPickerView(vm: vm) } }
+        .sheet(isPresented: $showComparison) { MetricComparisonView(vm: vm) }
         .sheet(item: $selectedMetric) { metric in
             SensorDetailView(metric: metric, history: vm.metricHistory[metric.name] ?? [])
         }

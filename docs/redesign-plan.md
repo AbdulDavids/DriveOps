@@ -16,6 +16,7 @@ Status: in progress, 20 September 2026. Based on the current app source, pinned 
 - Added dashboard edit mode for removing and reordering sensor tiles, plus a calmer sensor detail view with readable history and min/average/max.
 - Added distinct waiting, checked, invalid and last-reading states so a missing response is not presented as either zero or a current value.
 - Added adapter-free SwiftUI previews for the redesigned dashboard and sensor-detail view, populated with typed readings and sample history for visual review in Xcode.
+- Added a typed comparison screen that presents up to four independently scaled charts, so different units are never silently normalised into the same visual scale. It also has an Xcode preview.
 
 ### Still to implement
 
