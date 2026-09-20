@@ -72,6 +72,24 @@ enum MetricCatalog {
 
     static func displayName(for command: OBDCommand) -> String { definition(for: command).name }
 
+    static func category(for command: OBDCommand) -> String { definition(for: command).category }
+
+    static func summary(for command: OBDCommand) -> String {
+        switch command.properties.command {
+        case "010C": return "How fast the engine is turning."
+        case "010D": return "Road speed reported by the vehicle."
+        case "0105": return "Engine coolant heat level."
+        case "0104": return "How hard the engine is working."
+        case "0111": return "How far the throttle is open."
+        case "010F": return "Temperature of air entering the engine."
+        case "0110": return "Air entering the engine each second."
+        case "010B": return "Pressure in the intake manifold."
+        case "0133": return "Ambient atmospheric pressure."
+        case "010E": return "Ignition timing before top dead centre."
+        default: return "Live data reported by the vehicle."
+        }
+    }
+
     static func placeholder(for command: OBDCommand) -> LiveMetric {
         let definition = definition(for: command)
         return .init(id: command.properties.command, name: definition.name, category: definition.category, value: nil, unit: "", updatedAt: .distantPast, quality: .waiting)

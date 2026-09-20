@@ -2,72 +2,97 @@
 //  PIDPickerView.swift
 //  DriveOps
 //
-//  Lets the user choose which PIDs the live-data poll requests, replacing
-//  the old fixed 10-PID list — see Models/PIDSelection.swift.
-//
 
 import SwiftUI
 import SwiftOBD2
 
+@MainActor
 struct PIDPickerView: View {
+    enum Scope: String, CaseIterable, Identifiable {
+        case available = "Available"
+        case all = "All sensors"
+        case added = "On dashboard"
+        var id: Self { self }
+    }
+
     @ObservedObject var vm: OBDViewModel
     @Environment(\.dismiss) private var dismiss
-
-    // Mirrors the fork's OBDService.requestPIDs chunk size (SAE J1979's
-    // per-request PID limit under CAN framing — see the fork's
-    // Sources/SwiftOBD2/obd2service.swift). Not enforced as a hard cap here:
-    // selecting more just costs more round-trips per 300ms poll cycle, which
-    // is what this hint is telling the user rather than blocking them.
-    private static let pidsPerRequest = 6
+    @State private var scope: Scope = .available
+    @State private var search = ""
 
     private var supportedByVehicle: Set<OBDCommand>? {
         guard let supported = vm.obdInfo?.supportedPIDs else { return nil }
         return Set(supported)
     }
 
-    private var requestsPerCycle: Int {
-        guard !vm.selectedPIDs.isEmpty else { return 0 }
-        return Int((Double(vm.selectedPIDs.count) / Double(Self.pidsPerRequest)).rounded(.up))
+    private var effectiveScope: Scope {
+        supportedByVehicle == nil && scope == .available ? .all : scope
+    }
+
+    private var filtered: [OBDCommand] {
+        PIDCatalog.allLivePIDs.filter { pid in
+            let added = vm.dashboardMetricIDs.contains(pid.properties.command)
+            let available = supportedByVehicle?.contains(pid) == true || vm.liveMetrics[pid.properties.command]?.value != nil
+            let inScope: Bool
+            switch effectiveScope {
+            case .available: inScope = available
+            case .all: inScope = true
+            case .added: inScope = added
+            }
+            let searchText = [MetricCatalog.displayName(for: pid), MetricCatalog.summary(for: pid), pid.properties.description, pid.properties.command]
+                .joined(separator: " ")
+            return inScope && (search.isEmpty || searchText.localizedCaseInsensitiveContains(search))
+        }
+    }
+
+    private var grouped: [(String, [OBDCommand])] {
+        let order = ["Engine", "Temperatures", "Air & fuel", "Electrical", "Emissions", "Other sensors"]
+        return order.compactMap { category in
+            let items = filtered.filter { MetricCatalog.category(for: $0) == category }
+            return items.isEmpty ? nil : (category, items)
+        }
     }
 
     var body: some View {
         List {
             Section {
-                ForEach(PIDCatalog.allLivePIDs, id: \.self) { pid in
-                    Button {
-                        toggle(pid)
-                    } label: {
-                        row(for: pid)
-                    }
-                    .buttonStyle(.plain)
+                Picker("Show", selection: $scope) {
+                    ForEach(Scope.allCases) { scope in Text(scope.rawValue).tag(scope) }
                 }
-            } header: {
-                Text("Sensors")
-            } footer: {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("\(vm.dashboardMetricIDs.count) sensors on your dashboard. Add or remove a sensor here; updates apply immediately.")
-                    if requestsPerCycle > 1 {
-                        Text("That's \(requestsPerCycle) requests per poll cycle (adapters answer at most \(Self.pidsPerRequest) PIDs per request) — more selected PIDs means slower updates.")
-                    }
-                    if supportedByVehicle != nil {
-                        Text("A star means your vehicle reported the sensor as supported. Unmarked sensors can still work on some vehicles.")
+                .pickerStyle(.segmented)
+                .accessibilityLabel("Sensor filter")
+            }
+
+            if grouped.isEmpty {
+                ContentUnavailableView(
+                    effectiveScope == .available ? "No reported sensors" : "No matching sensors",
+                    systemImage: "sensor.tag.radiowaves.forward",
+                    description: Text(effectiveScope == .available ? "Your vehicle has not reported supported sensors yet. Try All sensors to choose one manually." : "Try a different search or filter.")
+                )
+            }
+
+            ForEach(grouped, id: \.0) { category, sensors in
+                Section(category) {
+                    ForEach(sensors, id: \.self) { pid in
+                        Button { toggle(pid) } label: { row(for: pid) }
+                            .buttonStyle(.plain)
                     }
                 }
+            }
+
+            Section {
+                Text("Adding a sensor puts it on your dashboard and begins requesting it. A sensor marked supported may still take a moment to return a reading.")
+                    .font(.footnote).foregroundStyle(.secondary)
             }
         }
+        .searchable(text: $search, prompt: "Search sensors")
         .navigationTitle("Add sensors")
-        #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
-        #endif
         .toolbar {
-            ToolbarItem(placement: .confirmationAction) {
-                Button("Done") { dismiss() }
-            }
+            ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }
             ToolbarItem(placement: .primaryAction) {
                 Menu {
-                    Button("Add all sensors") {
-                        PIDCatalog.allLivePIDs.forEach { vm.addToDashboard($0) }
-                    }
+                    Button("Add all visible") { filtered.forEach { vm.addToDashboard($0) } }
                     Button("Restore essentials") {
                         vm.dashboardMetricIDs = PIDCatalog.defaultSelection.map(\.properties.command).sorted()
                         vm.selectedPIDs = PIDCatalog.defaultSelection
@@ -76,9 +101,7 @@ struct PIDPickerView: View {
                         vm.dashboardMetricIDs = []
                         vm.selectedPIDs = []
                     }
-                } label: {
-                    Image(systemName: "ellipsis.circle")
-                }
+                } label: { Image(systemName: "ellipsis.circle") }
             }
         }
     }
@@ -91,40 +114,46 @@ struct PIDPickerView: View {
         }
     }
 
-    private func row(for pid: OBDCommand) -> some View {
-        HStack(spacing: 12) {
-            Image(systemName: vm.dashboardMetricIDs.contains(pid.properties.command) ? "checkmark.circle.fill" : "circle")
-                .foregroundStyle(vm.dashboardMetricIDs.contains(pid.properties.command) ? Color.accentColor : .secondary)
-                .font(.title3)
-
-            VStack(alignment: .leading, spacing: 2) {
-                HStack(spacing: 4) {
-                Text(MetricCatalog.displayName(for: pid))
-                        .foregroundStyle(.primary)
-                    if let supportedByVehicle, supportedByVehicle.contains(pid) {
-                        Image(systemName: "star.fill")
-                            .font(.caption2)
-                            .foregroundStyle(.yellow)
-                    }
-                }
-                Text("\(pid.properties.description) · \(pid.properties.command)")
-                    .font(.caption.monospaced())
-                    .foregroundStyle(.secondary)
+    private func availability(for pid: OBDCommand) -> (String, Color) {
+        if let metric = vm.liveMetrics[pid.properties.command] {
+            switch metric.quality {
+            case .live, .recovered: return ("Responding", .green)
+            case .waiting: return ("Waiting", .secondary)
+            case .stale: return ("Last reading", .orange)
+            case .invalid: return ("Unavailable", .orange)
             }
-
-            Spacer()
         }
-        .contentShape(Rectangle())
-        .padding(.vertical, 2)
+        if supportedByVehicle?.contains(pid) == true { return ("Supported", .green) }
+        return ("Not checked", .secondary)
+    }
+
+    private func row(for pid: OBDCommand) -> some View {
+        let added = vm.dashboardMetricIDs.contains(pid.properties.command)
+        let availability = availability(for: pid)
+        let reading = vm.liveMetrics[pid.properties.command]
+        return HStack(alignment: .top, spacing: 12) {
+            Image(systemName: added ? "checkmark.circle.fill" : "plus.circle")
+                .foregroundStyle(added ? Color.accentColor : .secondary)
+                .font(.title3)
+            VStack(alignment: .leading, spacing: 4) {
+                HStack {
+                    Text(MetricCatalog.displayName(for: pid)).foregroundStyle(.primary)
+                    Spacer()
+                    Text(added ? "Added" : availability.0)
+                        .font(.caption.weight(.medium)).foregroundStyle(added ? Color.accentColor : availability.1)
+                }
+                Text(reading.map(MetricCatalog.format) ?? MetricCatalog.summary(for: pid))
+                    .font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                Text(pid.properties.command)
+                    .font(.caption2.monospaced()).foregroundStyle(.tertiary)
+            }
+        }
+        .contentShape(Rectangle()).padding(.vertical, 3)
     }
 }
 
-// MARK: - Preview
-
 #if DEBUG
-#Preview {
-    NavigationStack {
-        PIDPickerView(vm: .stub(state: .disconnected))
-    }
+#Preview("Sensor catalogue") {
+    NavigationStack { PIDPickerView(vm: .stub(state: .disconnected)) }
 }
 #endif
