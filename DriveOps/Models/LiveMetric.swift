@@ -109,9 +109,9 @@ enum MetricCatalog {
         // the two payload bytes here until the dependency is updated; do not
         // infer a correction from an arbitrary large number.
         if commandID == "010C" {
-            let raw = Int((value * 4).rounded())
-            if raw >> 16 == 0x0C {
-                value = Double(raw & 0xFFFF) / 4
+            let normalised = normaliseRPMValue(value)
+            value = normalised.value
+            if normalised.recovered {
                 quality = .recovered
             }
         }
@@ -133,6 +133,15 @@ enum MetricCatalog {
         formatter.minimumFractionDigits = decimals
         formatter.maximumFractionDigits = decimals
         return "\(formatter.string(from: value as NSNumber) ?? "—") \(metric.unit)"
+    }
+
+    /// Returns a corrected RPM only for the exact three-byte `0C AA BB`
+    /// batch-decoder shape from the pinned dependency. Ordinary large values
+    /// are never guessed at or altered.
+    static func normaliseRPMValue(_ value: Double) -> (value: Double, recovered: Bool) {
+        let raw = Int((value * 4).rounded())
+        guard raw >> 16 == 0x0C else { return (value, false) }
+        return (Double(raw & 0xFFFF) / 4, true)
     }
 
     static func simulated(name: String, value: Double, unit: String, at time: Date = .now) -> LiveMetric {
