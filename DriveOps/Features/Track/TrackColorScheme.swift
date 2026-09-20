@@ -25,11 +25,23 @@ enum TrackColorScheme: String, CaseIterable, Identifiable {
         }
     }
 
-    /// For rainbow, cycles hue over time; every other scheme returns a fixed color.
-    func accent(at date: Date) -> Color {
+    /// A fixed, distinct color per sensor slot (0...3). Solid schemes use the
+    /// same accent for every slot; rainbow gives each field its own color,
+    /// F1-dash style.
+    func fieldColor(_ index: Int) -> Color {
         guard self == .rainbow else { return accent }
-        let period = 6.0
-        let hue = (date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: period)) / period
-        return Color(hue: hue, saturation: 0.85, brightness: 1.0)
+        let palette: [Color] = [
+            Color(red: 0.98, green: 0.24, blue: 0.24), // red
+            Color(red: 1.0, green: 0.75, blue: 0.15),  // amber
+            Color(red: 0.24, green: 0.95, blue: 0.98), // cyan
+            Color(red: 0.4, green: 0.85, blue: 0.3),   // green
+        ]
+        return palette[index % palette.count]
+    }
+
+    /// Color for the lap timer card. Solid schemes use the accent; rainbow uses a fifth color.
+    var timingColor: Color {
+        guard self == .rainbow else { return accent }
+        return Color(red: 0.7, green: 0.4, blue: 1.0) // purple
     }
 }
