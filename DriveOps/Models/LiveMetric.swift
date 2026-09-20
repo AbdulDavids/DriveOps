@@ -98,18 +98,26 @@ enum MetricCatalog {
     /// Normalises a decoded dependency result into a stable app reading. This is
     /// deliberately the only boundary where a dependency's labels/value quirks
     /// are interpreted; views receive typed values rather than strings.
-    static func reading(for command: OBDCommand, result: MeasurementResult, at time: Date = .now) -> LiveMetric {
+    ///
+    /// - Parameter batchPIDs: The full set of PID command strings requested in
+    ///   the same batch as `command` (e.g. `["010C", "010D", "0105"]`). Needed
+    ///   to recover RPM from the PID-echo corruption below — the corrupted top
+    ///   byte can be *any* PID sharing this batch, not just RPM's own.
+    static func reading(for command: OBDCommand, result: MeasurementResult, at time: Date = .now, batchPIDs: Set<String> = []) -> LiveMetric {
         let definition = definition(for: command)
         let commandID = command.properties.command
         var value = result.value
         var quality: MetricQuality = .live
 
-        // EVMSwiftOBD2 revision e73d56a's batch path passes the PID echo into
-        // the RPM decoder. Its three-byte value has 0C as the top byte. Recover
-        // the two payload bytes here until the dependency is updated; do not
-        // infer a correction from an arbitrary large number.
+        // EVMSwiftOBD2 revision e73d56a's batch path can pass another PID's
+        // echo byte into the RPM decoder instead of RPM's own — any PID
+        // sharing the batch can end up as the corrupted three-byte value's
+        // top byte, not just 0C. Recover the two payload bytes here until the
+        // dependency is updated; do not infer a correction from an arbitrary
+        // large number that doesn't match a PID actually in this batch.
         if commandID == "010C" {
-            let normalised = normaliseRPMValue(value)
+            let batchPIDBytes = Set(batchPIDs.compactMap { UInt8($0.suffix(2), radix: 16) })
+            let normalised = normaliseRPMValue(value, knownPIDBytes: batchPIDBytes)
             value = normalised.value
             if normalised.recovered {
                 quality = .recovered
@@ -135,12 +143,17 @@ enum MetricCatalog {
         return "\(formatter.string(from: value as NSNumber) ?? "—") \(metric.unit)"
     }
 
-    /// Returns a corrected RPM only for the exact three-byte `0C AA BB`
-    /// batch-decoder shape from the pinned dependency. Ordinary large values
-    /// are never guessed at or altered.
-    static func normaliseRPMValue(_ value: Double) -> (value: Double, recovered: Bool) {
+    /// Returns a corrected RPM only when the three-byte batch-decoder shape's
+    /// top byte matches a PID actually requested in the same batch (RPM's own
+    /// 0x0C, or another requested PID whose echo leaked in). Ordinary large
+    /// values, and any top byte not in `knownPIDBytes`, are never guessed at
+    /// or altered. `knownPIDBytes` defaults to just 0x0C (RPM's own byte) so
+    /// callers that don't have batch context still get the original, narrower
+    /// recovery.
+    static func normaliseRPMValue(_ value: Double, knownPIDBytes: Set<UInt8> = [0x0C]) -> (value: Double, recovered: Bool) {
         let raw = Int((value * 4).rounded())
-        guard raw >> 16 == 0x0C else { return (value, false) }
+        let topByte = UInt8((raw >> 16) & 0xFF)
+        guard raw >> 16 == Int(topByte), knownPIDBytes.contains(topByte) else { return (value, false) }
         return (Double(raw & 0xFFFF) / 4, true)
     }
 

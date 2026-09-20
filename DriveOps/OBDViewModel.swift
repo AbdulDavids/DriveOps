@@ -394,8 +394,9 @@ class OBDViewModel: ObservableObject {
                         guard let prior = updatedMetrics[command], now.timeIntervalSince(prior.updatedAt) > 2 else { continue }
                         updatedMetrics[command] = prior.markedStale()
                     }
+                    let batchPIDs = Set(pids.map(\.properties.command))
                     for (cmd, measurement): (OBDCommand, MeasurementResult) in results {
-                        let metric = MetricCatalog.reading(for: cmd, result: measurement, at: now)
+                        let metric = MetricCatalog.reading(for: cmd, result: measurement, at: now, batchPIDs: batchPIDs)
                         let key = metric.name
                         updatedMetrics[metric.id] = metric
                         guard let value = metric.value else { continue }

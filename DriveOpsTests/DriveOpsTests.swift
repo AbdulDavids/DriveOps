@@ -42,6 +42,20 @@ final class DriveOpsTests: XCTestCase {
         XCTAssertEqual(ordinary.value, 2_750)
     }
 
+    func testRPMRecoveryHandlesEchoFromAnyBatchedPID() {
+        // Same corrupted payload as the 0x0C case above, but with 010D's PID
+        // byte (0x0D) leaked in as the top byte instead of RPM's own — the
+        // shape Track hits once its extra PIDs join the poll batch.
+        let recoveredFromOtherPID = MetricCatalog.normaliseRPMValue(214_065, knownPIDBytes: [0x0C, 0x0D])
+        XCTAssertTrue(recoveredFromOtherPID.recovered)
+        XCTAssertEqual(recoveredFromOtherPID.value, 1_073)
+
+        // Same value is left alone when that PID isn't actually in the batch.
+        let notInBatch = MetricCatalog.normaliseRPMValue(214_065, knownPIDBytes: [0x0C])
+        XCTAssertFalse(notInBatch.recovered)
+        XCTAssertEqual(notInBatch.value, 214_065)
+    }
+
     func testStaleMetricKeepsItsLastValue() {
         let metric = LiveMetric(
             id: "010C", name: "Engine RPM", category: "Engine", value: 1_073,
