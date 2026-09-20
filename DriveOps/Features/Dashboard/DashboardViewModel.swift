@@ -27,7 +27,11 @@ extension OBDViewModel {
             }
             return "Connecting…"
         case .connectedToAdapter: return "Connected to adapter"
-        case .connectedToVehicle: return "Connected to vehicle"
+        case .connectedToVehicle:
+            if let manufacturer = decodedVIN?.manufacturer {
+                return "Connected to \(manufacturer)"
+            }
+            return "Connected to vehicle"
         case .error: return "Error"
         }
     }
