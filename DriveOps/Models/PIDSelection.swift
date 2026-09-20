@@ -67,19 +67,25 @@ enum PIDSelectionStore {
 /// is the user's layout; polling may temporarily include a sensor opened in a
 /// detail view in a later iteration.
 enum DashboardLayoutStore {
-    private static let key = "dashboardMetricCommands"
+    private static let legacyKey = "dashboardMetricCommands"
+    private static let key = "dashboardMetricCommandsByVehicle"
 
-    static func load() -> [String] {
-        guard let saved = UserDefaults.standard.stringArray(forKey: key) else {
-            return PIDCatalog.defaultSelection
-                .map(\.properties.command)
-                .sorted()
+    static func load(for vehicleID: String) -> [String] {
+        if let layouts = UserDefaults.standard.dictionary(forKey: key) as? [String: [String]], let saved = layouts[vehicleID] {
+            return saved
         }
-        return saved
+        // Preserve the pre-redesign layout when a user first connects after
+        // upgrading. It is copied to the chosen vehicle on its first save.
+        if let legacy = UserDefaults.standard.stringArray(forKey: legacyKey) {
+            return legacy
+        }
+        return PIDCatalog.defaultSelection.map(\.properties.command).sorted()
     }
 
-    static func save(_ commands: [String]) {
-        UserDefaults.standard.set(commands, forKey: key)
+    static func save(_ commands: [String], for vehicleID: String) {
+        var layouts = UserDefaults.standard.dictionary(forKey: key) as? [String: [String]] ?? [:]
+        layouts[vehicleID] = commands
+        UserDefaults.standard.set(layouts, forKey: key)
     }
 }
 

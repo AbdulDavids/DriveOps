@@ -20,6 +20,15 @@ struct PIDPickerView: View {
     @State private var scope: Scope = .available
     @State private var search = ""
 
+    /// The OBD service batches up to six mode-01 PIDs in one request. More
+    /// sensors still work, but require another round trip and refresh slower.
+    private static let sensorsPerRequest = 6
+
+    private var selectedCount: Int { vm.dashboardMetricIDs.count }
+    private var requestGroups: Int {
+        Int((Double(selectedCount) / Double(Self.sensorsPerRequest)).rounded(.up))
+    }
+
     private var supportedByVehicle: Set<OBDCommand>? {
         guard let supported = vm.obdInfo?.supportedPIDs else { return nil }
         return Set(supported)
@@ -86,6 +95,26 @@ struct PIDPickerView: View {
             }
         }
         .searchable(text: $search, prompt: "Search sensors")
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            VStack(alignment: .leading, spacing: 4) {
+                HStack {
+                    Label("\(selectedCount) selected", systemImage: "checkmark.circle.fill")
+                        .font(.subheadline.weight(.semibold))
+                    Spacer()
+                    Text(selectedCount == 1 ? "1 request group" : "\(max(requestGroups, 1)) request groups")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+                if selectedCount > Self.sensorsPerRequest {
+                    Label("More than \(Self.sensorsPerRequest) sensors means updates rotate through \(requestGroups) groups and refresh less often.", systemImage: "exclamationmark.triangle.fill")
+                        .font(.caption).foregroundStyle(.orange)
+                } else {
+                    Text("Up to \(Self.sensorsPerRequest) sensors update in the same request.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+            }
+            .padding(.horizontal).padding(.vertical, 10)
+            .background(.bar)
+        }
         .navigationTitle("Add sensors")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {

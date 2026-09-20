@@ -90,11 +90,21 @@ class OBDViewModel: ObservableObject {
         }
     }
 
-    @Published var dashboardMetricIDs: [String] = DashboardLayoutStore.load() {
+    @Published private(set) var dashboardVehicleID = "default"
+    @Published var dashboardMetricIDs: [String] = DashboardLayoutStore.load(for: "default") {
         didSet {
             guard dashboardMetricIDs != oldValue else { return }
-            DashboardLayoutStore.save(dashboardMetricIDs)
+            DashboardLayoutStore.save(dashboardMetricIDs, for: dashboardVehicleID)
         }
+    }
+
+    private func activateDashboard(for vehicleID: String) {
+        dashboardVehicleID = vehicleID
+        dashboardMetricIDs = DashboardLayoutStore.load(for: vehicleID)
+        selectedPIDs = Set(dashboardMetricIDs.compactMap(PIDCatalog.command(named:)))
+        liveData = [:]
+        metricHistory = [:]
+        liveMetrics = [:]
     }
 
     func addToDashboard(_ pid: OBDCommand) {
@@ -262,6 +272,7 @@ class OBDViewModel: ObservableObject {
                 }
                 let elapsed = Date().timeIntervalSince(startedAt)
                 self.obdInfo = info
+                self.activateDashboard(for: info.vin?.uppercased() ?? "unidentified")
                 self.isConnecting = false
                 self.connectTask = nil
                 self.log("Connected via \(type.rawValue) in \(String(format: "%.2f", elapsed))s. Protocol: \(info.obdProtocol?.description ?? "unknown"), VIN: \(info.vin ?? "n/a"), PIDs: \(info.supportedPIDs?.count ?? 0), ECUs: \(info.ecuMap?.count ?? 0)")
@@ -298,6 +309,7 @@ class OBDViewModel: ObservableObject {
             self.isConnecting = false
             self.connectTask = nil
             self.connectionState = .connectedToVehicle
+            self.activateDashboard(for: "demo")
             self.log("Connected via demo (simulated driving cycle)")
             AppLogger.demo.info("startConnectingDemo connected")
             self.startSimulatedPoll()
