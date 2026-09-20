@@ -48,6 +48,7 @@ struct ContentView: View {
         .sheet(isPresented: $showWifiSheet) {
             WiFiInfoSheet(vm: vm, wifi: wifi, isPresented: $showWifiSheet)
         }
+        .onAppear { vm.autoConnectIfPossible() }
     }
 }
 

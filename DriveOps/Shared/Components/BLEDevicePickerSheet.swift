@@ -15,6 +15,28 @@ import SwiftOBD2
 struct BLEDevicePickerSheet: View {
     @ObservedObject var vm: OBDViewModel
     @Binding var isPresented: Bool
+    @State private var showingAllDevices = false
+
+    /// Common substrings in cheap ELM327-style OBD2 adapter names (case
+    /// folded before matching) — narrows a noisy BLE scan to the devices
+    /// someone actually came here for, with "Show All Devices" as the escape
+    /// hatch for anything unusually named.
+    private static let likelyNameKeywords = ["obd", "elm", "vlink", "obdlink"]
+
+    private static func isLikelyOBD2Device(_ peripheral: CBPeripheral) -> Bool {
+        guard let name = peripheral.name?.lowercased() else { return false }
+        return Self.likelyNameKeywords.contains { name.contains($0) }
+    }
+
+    private var displayedPeripherals: [CBPeripheral] {
+        guard !showingAllDevices else { return vm.discoveredPeripherals }
+        let likely = vm.discoveredPeripherals.filter(Self.isLikelyOBD2Device)
+        return likely.isEmpty ? vm.discoveredPeripherals : likely
+    }
+
+    private var isFiltering: Bool {
+        !showingAllDevices && displayedPeripherals.count < vm.discoveredPeripherals.count
+    }
 
     var body: some View {
         NavigationStack {
@@ -51,14 +73,24 @@ struct BLEDevicePickerSheet: View {
         if vm.discoveredPeripherals.isEmpty {
             emptyState
         } else {
-            List(vm.discoveredPeripherals, id: \.identifier) { peripheral in
-                Button {
-                    vm.connect(to: peripheral)
-                    isPresented = false
-                } label: {
-                    deviceRow(peripheral)
+            List {
+                Section {
+                    ForEach(displayedPeripherals, id: \.identifier) { peripheral in
+                        Button {
+                            vm.connect(to: peripheral)
+                            isPresented = false
+                        } label: {
+                            deviceRow(peripheral)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                } footer: {
+                    if isFiltering {
+                        Button("Show All Devices") {
+                            withAnimation { showingAllDevices = true }
+                        }
+                    }
                 }
-                .buttonStyle(.plain)
             }
             #if os(iOS)
             .listStyle(.insetGrouped)

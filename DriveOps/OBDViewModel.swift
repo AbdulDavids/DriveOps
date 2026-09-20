@@ -226,6 +226,25 @@ class OBDViewModel: ObservableObject {
         startConnecting(type: .wifi, service: OBDService(connectionType: .wifi))
     }
 
+    /// Tries to reconnect to the last Bluetooth adapter that connected
+    /// successfully, without the user having to open the device picker again.
+    /// Silent no-op when there's nothing saved, the device isn't currently
+    /// retrievable (out of range, powered off, forgotten by iOS), or a
+    /// connection attempt is already underway — this only ever runs once, on
+    /// launch, before the user has done anything else.
+    func autoConnectIfPossible() {
+        guard !isConnecting, connectionState == .disconnected, let identifier = LastKnownDeviceStore.load() else { return }
+        Task {
+            guard let peripheral = await self.bluetoothService.retrievePeripheral(identifier: identifier) else {
+                self.log("Auto-connect: last known device is no longer available.")
+                return
+            }
+            guard !self.isConnecting, self.connectionState == .disconnected else { return }
+            self.log("Auto-connecting to last known device…")
+            self.connect(to: peripheral)
+        }
+    }
+
     func connectDemo() {
         startConnectingDemo()
     }
@@ -283,6 +302,9 @@ class OBDViewModel: ObservableObject {
                 self.activateDashboard(for: info.vin?.uppercased() ?? "unidentified")
                 self.isConnecting = false
                 self.connectTask = nil
+                if type == .bluetooth, let identifier = peripheral?.identifier ?? service.connectedPeripheral?.identifier {
+                    LastKnownDeviceStore.save(identifier)
+                }
                 self.log("Connected via \(type.rawValue) in \(String(format: "%.2f", elapsed))s. Protocol: \(info.obdProtocol?.description ?? "unknown"), VIN: \(info.vin ?? "n/a"), PIDs: \(info.supportedPIDs?.count ?? 0), ECUs: \(info.ecuMap?.count ?? 0)")
                 AppLogger.connection.info("startConnection success type=\(type.rawValue, privacy: .public) elapsed=\(elapsed, format: .fixed(precision: 2))s protocol=\(info.obdProtocol?.description ?? "unknown", privacy: .public)")
                 self.startLiveDataWith(service)
