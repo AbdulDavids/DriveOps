@@ -41,7 +41,7 @@ struct DiagnosticsView: View {
             } detail: {
                 if let selected = selectedCode,
                    let item = allCodes.first(where: { $0.code == selected }) {
-                    TroubleCodeDetailView(code: item.code, ecu: item.ecu)
+                    TroubleCodeDetailView(code: item.code, ecu: item.ecu, vm: vm)
                 } else {
                     ContentUnavailableView("Select a Code", systemImage: "stethoscope")
                 }
@@ -137,7 +137,7 @@ struct DiagnosticsView: View {
             }
             .padding(.vertical, 2)
         } else {
-            NavigationLink(destination: TroubleCodeDetailView(code: item.code, ecu: item.ecu)) {
+            NavigationLink(destination: TroubleCodeDetailView(code: item.code, ecu: item.ecu, vm: vm)) {
                 VStack(alignment: .leading, spacing: 4) {
                     codeRowContent(item: item)
                 }

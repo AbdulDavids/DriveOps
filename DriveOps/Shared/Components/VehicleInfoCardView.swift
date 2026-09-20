@@ -63,6 +63,33 @@ struct VehicleInfoCardView: View {
                     }
                 }
                 .padding(.top, 8)
+
+                if let supported = info.supportedPIDs, !supported.isEmpty {
+                    Divider()
+                        .padding(.top, 8)
+
+                    // Visibility into what this vehicle actually supports —
+                    // cross-reference against Settings → Live Data PIDs
+                    // (PIDPickerView), which lets the user choose which of
+                    // these (or any other known PID) the poll requests.
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Supported PID List")
+                            .font(.subheadline.weight(.medium))
+                            .foregroundStyle(.secondary)
+
+                        ForEach(supported.sorted { $0.properties.command < $1.properties.command }, id: \.self) { pid in
+                            HStack {
+                                Text(pid.properties.description)
+                                Spacer()
+                                Text(pid.properties.command)
+                                    .font(.caption.monospaced())
+                                    .foregroundStyle(.secondary)
+                            }
+                            .font(.subheadline)
+                        }
+                    }
+                    .padding(.top, 8)
+                }
             }
         }
         .padding()

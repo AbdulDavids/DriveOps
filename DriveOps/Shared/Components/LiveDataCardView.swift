@@ -6,13 +6,16 @@
 import SwiftUI
 
 struct LiveDataCardView: View {
-    let liveData: [String: String]
-    let metricHistory: [String: [MetricSample]]
+    @ObservedObject var vm: OBDViewModel
     var isWide: Bool = false
 
     @State private var pinnedKeys: Set<String> = []
     @State private var showCompare = false
     @State private var showGauges = false
+    @State private var showPIDPicker = false
+
+    private var liveData: [String: String] { vm.liveData }
+    private var metricHistory: [String: [MetricSample]] { vm.metricHistory }
 
     private let maxPins = 4
 
@@ -26,6 +29,15 @@ struct LiveDataCardView: View {
                 Label("Live Data", systemImage: "gauge.with.needle")
                     .font(.headline)
                 Spacer()
+                Button {
+                    showPIDPicker = true
+                } label: {
+                    Label("PIDs", systemImage: "list.bullet.circle")
+                        .font(.caption)
+                        .fontWeight(.semibold)
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.mini)
                 Button {
                     showGauges = true
                 } label: {
@@ -52,7 +64,9 @@ struct LiveDataCardView: View {
 
             Divider()
 
-            if isWide {
+            if sorted.isEmpty {
+                emptySelectionPrompt
+            } else if isWide {
                 let columns = [GridItem(.flexible()), GridItem(.flexible())]
                 LazyVGrid(columns: columns, spacing: 8) {
                     ForEach(sorted, id: \.key) { key, value in
@@ -108,6 +122,32 @@ struct LiveDataCardView: View {
             let filteredData = hasPins ? liveData.filter { pinnedKeys.contains($0.key) } : liveData
             GaugeGridView(liveData: filteredData, fillScreen: hasPins)
         }
+        .adaptivePresentation(isPresented: $showPIDPicker) {
+            NavigationStack {
+                PIDPickerView(vm: vm)
+            }
+        }
+    }
+
+    // Shown instead of the metric list when selectedPIDs is empty — the card
+    // still needs to render (rather than DashboardView hiding it entirely
+    // when liveData.isEmpty) so there's always a way back to the picker.
+    private var emptySelectionPrompt: some View {
+        VStack(spacing: 10) {
+            Image(systemName: "list.bullet.circle")
+                .font(.system(size: 28))
+                .foregroundStyle(.secondary)
+            Text("No PIDs selected")
+                .font(.subheadline.weight(.medium))
+            Text("Choose which sensors to poll for live data.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Button("Select PIDs") { showPIDPicker = true }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.small)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 24)
     }
 
     private func toggle(_ key: String) {

@@ -7,9 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		9601A0002F9A000100000001 /* VIN in Frameworks */ = {isa = PBXBuildFile; productRef = 9601A0012F9A000100000001 /* VIN */; };
 		961B06682F96DA31004A2A7C /* AppleIntelligenceForSwiftUI in Frameworks */ = {isa = PBXBuildFile; productRef = 961B06692F96DA31004A2A7C /* AppleIntelligenceForSwiftUI */; };
 		9661CECF2F7510F600B851E8 /* SwiftOBD2 in Frameworks */ = {isa = PBXBuildFile; productRef = 9661CECE2F7510F600B851E8 /* SwiftOBD2 */; };
-		9601A0002F9A000100000001 /* VIN in Frameworks */ = {isa = PBXBuildFile; productRef = 9601A0012F9A000100000001 /* VIN */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -423,7 +423,7 @@
 				CODE_SIGN_ENTITLEMENTS = DriveOps/DriveOps.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 5;
 				DEVELOPMENT_TEAM = YPPL9F7Y4F;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -447,7 +447,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 26.2;
-				MARKETING_VERSION = 0.2.7;
+				MARKETING_VERSION = 0.3.0;
 				PRODUCT_BUNDLE_IDENTIFIER = abduldavids.DriveOps;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -474,7 +474,7 @@
 				CODE_SIGN_ENTITLEMENTS = DriveOps/DriveOps.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 5;
 				DEVELOPMENT_TEAM = YPPL9F7Y4F;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -498,7 +498,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 26.2;
-				MARKETING_VERSION = 0.2.7;
+				MARKETING_VERSION = 0.3.0;
 				PRODUCT_BUNDLE_IDENTIFIER = abduldavids.DriveOps;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -661,6 +661,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		9601A0022F9A000100000001 /* XCRemoteSwiftPackageReference "VIN" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/Automotive-Swift/VIN.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.0.0;
+			};
+		};
 		961B06672F96DA31004A2A7C /* XCRemoteSwiftPackageReference "AppleIntelligenceForSwiftUI" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/alessiorubicini/AppleIntelligenceForSwiftUI.git";
@@ -671,23 +679,20 @@
 		};
 		9661CECD2F7510F600B851E8 /* XCRemoteSwiftPackageReference "EVMSwiftOBD2" */ = {
 			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/valexa/EVMSwiftOBD2.git";
+			repositoryURL = "https://github.com/AbdulDavids/EVMSwiftOBD2.git";
 			requirement = {
-				branch = develop;
+				branch = main;
 				kind = branch;
-			};
-		};
-		9601A0022F9A000100000001 /* XCRemoteSwiftPackageReference "VIN" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/Automotive-Swift/VIN.git";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 2.0.0;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		9601A0012F9A000100000001 /* VIN */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 9601A0022F9A000100000001 /* XCRemoteSwiftPackageReference "VIN" */;
+			productName = VIN;
+		};
 		961B06692F96DA31004A2A7C /* AppleIntelligenceForSwiftUI */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 961B06672F96DA31004A2A7C /* XCRemoteSwiftPackageReference "AppleIntelligenceForSwiftUI" */;
@@ -697,11 +702,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 9661CECD2F7510F600B851E8 /* XCRemoteSwiftPackageReference "EVMSwiftOBD2" */;
 			productName = SwiftOBD2;
-		};
-		9601A0012F9A000100000001 /* VIN */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 9601A0022F9A000100000001 /* XCRemoteSwiftPackageReference "VIN" */;
-			productName = VIN;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

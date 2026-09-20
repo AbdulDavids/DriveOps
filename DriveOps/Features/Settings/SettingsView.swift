@@ -17,6 +17,20 @@ private struct ChangelogEntry: Identifiable {
 
 private let changelog: [ChangelogEntry] = [
     ChangelogEntry(
+        version: "0.3.0",
+        date: "Sep 2026",
+        items: [
+            "BLE device picker — choose which adapter to connect to instead of auto-connecting to the first one found",
+            "Support for BLE OBD2 adapters with unrecognised GATT UUIDs (property-based fallback)",
+            "Fixed live data batches failing on vehicles that don't accept large multi-PID requests",
+            "Selectable live data PIDs from the dashboard — choose exactly which sensors to poll",
+            "VIN decoding — manufacturer, model year, and origin shown in the Vehicle card",
+            "AI Mechanic explanations now include decoded vehicle info for more relevant answers",
+            "Apple Intelligence model picker in Settings (On-Device / Off)",
+            "Fixed a crash opening Diagnostics after selecting the (since removed) Cloud AI option",
+        ]
+    ),
+    ChangelogEntry(
         version: "0.2.7",
         date: "Apr 2026",
         items: [
@@ -73,7 +87,14 @@ private let changelog: [ChangelogEntry] = [
 struct SettingsView: View {
     @ObservedObject var vm: OBDViewModel
     @AppStorage("aiChatProvider") private var providerRaw: String = AIChatProvider.chatgpt.rawValue
-    @AppStorage("onDeviceAIEnabled") private var onDeviceAIEnabled: Bool = true
+    // The default here only applies before OnDeviceAIMode.loadInitial() has
+    // ever run (i.e. this @AppStorage key has no value yet); .onAppear below
+    // immediately overwrites it with the migrated value so a returning user
+    // never sees this hardcoded .systemModel default override their old
+    // on/off toggle setting.
+    @AppStorage("onDeviceAIMode") private var aiModeRaw: String = OnDeviceAIMode.systemModel.rawValue
+
+    private var aiMode: OnDeviceAIMode { OnDeviceAIMode(rawValue: aiModeRaw) ?? .systemModel }
 
     private var appVersion: String {
         let v = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "?"
@@ -114,13 +135,15 @@ struct SettingsView: View {
                             Text(p.displayName).tag(p.rawValue)
                         }
                     }
-                    Toggle("On-Device AI", isOn: $onDeviceAIEnabled)
+                    Picker("Apple Intelligence", selection: $aiModeRaw) {
+                        ForEach(OnDeviceAIMode.selectableCases) { mode in
+                            Text(mode.displayName).tag(mode.rawValue)
+                        }
+                    }
                 } header: {
                     Text("Diagnostics")
                 } footer: {
-                    Text(onDeviceAIEnabled
-                         ? "On-device Apple Intelligence explains codes as you open them."
-                         : "On-device AI is off. Use \"Ask…\" to open an external provider.")
+                    Text(aiMode.footerDescription)
                         .font(.caption)
                 }
 
@@ -147,6 +170,14 @@ struct SettingsView: View {
             #if os(iOS)
             .navigationBarTitleDisplayMode(.large)
             #endif
+        }
+        .onAppear {
+            // One-time migration from the old boolean toggle — see
+            // OnDeviceAIMode.loadInitial(). Only actually changes anything
+            // the first time this runs after updating from a version that
+            // only had the on/off Toggle; every run after that is a no-op
+            // because the new key already has a value by then.
+            aiModeRaw = OnDeviceAIMode.loadInitial().rawValue
         }
     }
 }

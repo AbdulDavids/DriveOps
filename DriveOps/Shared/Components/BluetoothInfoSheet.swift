@@ -8,6 +8,7 @@ import SwiftUI
 struct BluetoothInfoSheet: View {
     @ObservedObject var vm: OBDViewModel
     @Binding var isPresented: Bool
+    @State private var showDevicePicker = false
 
     var body: some View {
         VStack(spacing: 24) {
@@ -27,7 +28,7 @@ struct BluetoothInfoSheet: View {
             .frame(maxWidth: .infinity, alignment: .leading)
 
             VStack(spacing: 16) {
-                Button(action: { isPresented = false; vm.connect() }) {
+                Button(action: { showDevicePicker = true }) {
                     Label("Connect", systemImage: "dot.radiowaves.left.and.right")
                         .frame(maxWidth: .infinity)
                 }
@@ -51,6 +52,17 @@ struct BluetoothInfoSheet: View {
         }
         .padding(24)
         .presentationDetents([.medium])
+        .sheet(isPresented: $showDevicePicker, onDismiss: {
+            // A device pick calls vm.connect(to:) — which sets isConnecting
+            // synchronously — before dismissing itself. Close this info sheet
+            // too so the dashboard's connection card is what shows progress
+            // next, rather than leaving both sheets stacked.
+            if vm.isConnecting {
+                isPresented = false
+            }
+        }) {
+            BLEDevicePickerSheet(vm: vm, isPresented: $showDevicePicker)
+        }
     }
 
     private func btStep(_ number: String, _ text: String) -> some View {

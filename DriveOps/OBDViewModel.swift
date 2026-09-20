@@ -5,6 +5,7 @@
 
 import Foundation
 import Combine
+import CoreBluetooth
 import SwiftOBD2
 import VIN
 import os
@@ -42,10 +43,55 @@ class OBDViewModel: ObservableObject {
         return VIN(content: raw)
     }
 
+    /// A short "you're asking about a 2019 Honda vehicle" style fragment built
+    /// from `decodedVIN`, for injection into AI Mechanic prompts/summaries so
+    /// explanations are vehicle-aware instead of generic. Returns `nil` (never
+    /// a placeholder like "unknown vehicle") when there's no VIN or nothing
+    /// decoded from it, so callers can `if let` this in without ever forcing
+    /// broken or misleading context into a prompt.
+    var vehicleContextForPrompt: String? {
+        guard let decodedVIN else { return nil }
+
+        // Build "2019 Honda" style fragment from whichever of year/manufacturer
+        // actually decoded — VIN decoding is best-effort per-field, so either
+        // one (or both) can be missing even for a syntactically valid VIN.
+        let yearAndMake = [
+            decodedVIN.modelYear.map { "\($0)" },
+            decodedVIN.manufacturer,
+        ].compactMap { $0 }.joined(separator: " ")
+
+        guard !yearAndMake.isEmpty else { return nil }
+
+        var context = "a \(yearAndMake) vehicle"
+        if let country = decodedVIN.countryName {
+            context += " (built in \(country))"
+        }
+        return context
+    }
+
+    /// BLE peripherals seen since the last `startPeripheralScan()`. Backs the
+    /// device picker sheet — see `docs/architecture/connection-lifecycle.md`.
+    @Published var discoveredPeripherals: [CBPeripheral] = []
+    @Published var isScanningForPeripherals = false
+
+    /// The PIDs the live-data poll requests each cycle — user-selectable via
+    /// the PID picker in Settings, replacing the old fixed 10-PID list. See
+    /// `Models/PIDSelection.swift`. Persisted immediately on every change so
+    /// a picker edit takes effect on the very next poll cycle without
+    /// needing a reconnect.
+    @Published var selectedPIDs: Set<OBDCommand> = PIDSelectionStore.load() {
+        didSet {
+            guard selectedPIDs != oldValue else { return }
+            PIDSelectionStore.save(selectedPIDs)
+            log("PID selection changed: \(selectedPIDs.count) PID(s) selected.")
+        }
+    }
+
     private let historyLimit = 120
     private let logLimit = 500
     private var cancellables = Set<AnyCancellable>()
     private var connectTask: Task<Void, Never>?
+    private var scanTask: Task<Void, Never>?
     private var pollTask: Task<Void, Never>?
     private let simulator = DrivingSimulator()
     private var pollCycleCount = 0
@@ -56,6 +102,9 @@ class OBDViewModel: ObservableObject {
             bluetoothService.$connectionState
                 .receive(on: DispatchQueue.main)
                 .assign(to: &$connectionState)
+        }
+        bluetoothService.onPeripheralsUpdated = { [weak self] peripherals in
+            self?.discoveredPeripherals = peripherals
         }
     }
 
@@ -70,10 +119,53 @@ class OBDViewModel: ObservableObject {
         AppLogger.connection.debug("\(message, privacy: .public)")
     }
 
+    // MARK: - Peripheral discovery
+
+    /// Starts (or restarts) an unfiltered BLE scan so the device picker can
+    /// show every nearby peripheral, not just ones the library already
+    /// recognises by service UUID — see `docs/architecture/connection-lifecycle.md`.
+    func startPeripheralScan() {
+        scanTask?.cancel()
+        discoveredPeripherals = []
+        isScanningForPeripherals = true
+        log("Scanning for BLE devices…")
+        AppLogger.connection.info("startPeripheralScan begin")
+        scanTask = Task {
+            do {
+                try await bluetoothService.scanForPeripherals()
+            } catch {
+                guard !Task.isCancelled else { return }
+                self.log("Peripheral scan failed: \(error.localizedDescription)")
+                AppLogger.connection.error("startPeripheralScan failed error=\(String(describing: error), privacy: .public)")
+            }
+            guard !Task.isCancelled else { return }
+            self.isScanningForPeripherals = false
+            self.log("Scan finished — \(self.discoveredPeripherals.count) device(s) found.")
+        }
+    }
+
+    func stopPeripheralScan() {
+        scanTask?.cancel()
+        scanTask = nil
+        isScanningForPeripherals = false
+    }
+
     // MARK: - Connection
 
+    /// Connects to whichever BLE peripheral the device picker scan finds
+    /// first. Kept for demo/preview convenience — the picker itself should
+    /// call `connect(to:)` with the user's actual choice.
     func connect() {
         startConnecting(type: .bluetooth, service: bluetoothService)
+    }
+
+    /// Connects to a specific peripheral the user picked, bypassing the
+    /// scan-and-take-first behavior `connect()` falls back to. This is what
+    /// makes an adapter other than "whichever one answers first" usable when
+    /// more than one BLE OBD2 device is in range.
+    func connect(to peripheral: CBPeripheral) {
+        stopPeripheralScan()
+        startConnecting(type: .bluetooth, service: bluetoothService, peripheral: peripheral)
     }
 
     func connectWifi() {
@@ -87,6 +179,7 @@ class OBDViewModel: ObservableObject {
     func cancelConnection() {
         log("Connection cancelled by user (was connecting via \(activeConnectionType?.rawValue ?? "unknown")).")
         AppLogger.connection.notice("cancelConnection type=\(self.activeConnectionType?.rawValue ?? "unknown", privacy: .public)")
+        stopPeripheralScan()
         connectTask?.cancel()
         connectTask = nil
         activeService?.stopConnection()
@@ -113,17 +206,17 @@ class OBDViewModel: ObservableObject {
         pollErrorCount = 0
     }
 
-    private func startConnecting(type: AppConnectionType, service: OBDService) {
+    private func startConnecting(type: AppConnectionType, service: OBDService, peripheral: CBPeripheral? = nil) {
         isConnecting = true
         activeConnectionType = type
         errorMessage = nil
         let startedAt = Date()
-        log("Connecting via \(type.rawValue)…")
-        AppLogger.connection.info("startConnection begin type=\(type.rawValue, privacy: .public)")
+        log("Connecting via \(type.rawValue)\(peripheral.map { " to \($0.name ?? $0.identifier.uuidString)" } ?? "")…")
+        AppLogger.connection.info("startConnection begin type=\(type.rawValue, privacy: .public) peripheral=\(peripheral?.identifier.uuidString ?? "auto", privacy: .public)")
         bind(service)
         connectTask = Task {
             do {
-                let info = try await service.startConnection()
+                let info = try await service.startConnection(peripheral: peripheral)
                 guard !Task.isCancelled else {
                     self.log("\(type.rawValue) connect task cancelled after connection succeeded; disconnecting.")
                     service.stopConnection()
@@ -196,26 +289,23 @@ class OBDViewModel: ObservableObject {
     }
 
     private func startLiveDataWith(_ service: OBDService) {
-        // Note: .fuelLevel excluded — library mock passes Double to %02X format specifier (crash).
-        // .controlModuleVoltage excluded — no mock response implemented upstream.
-        let pids: [OBDCommand] = [
-            .mode1(.rpm),
-            .mode1(.speed),
-            .mode1(.coolantTemp),
-            .mode1(.throttlePos),
-            .mode1(.engineLoad),
-            .mode1(.intakeTemp),
-            .mode1(.maf),
-            .mode1(.barometricPressure),
-            .mode1(.intakePressure),
-            .mode1(.timingAdvance),
-        ]
-
-        log("Starting live data poll for \(pids.count) PIDs: \(pids.map(\.properties.description).joined(separator: ", "))")
+        log("Starting live data poll for \(selectedPIDs.count) PID(s): \(selectedPIDs.map(\.properties.description).sorted().joined(separator: ", "))")
         pollCycleCount = 0
         pollErrorCount = 0
         pollTask = Task {
             while !Task.isCancelled {
+                // Read fresh each cycle (not captured once at loop start) so a
+                // picker edit mid-session takes effect on the very next tick
+                // without needing a reconnect — see selectedPIDs' didSet.
+                let pids = Array(self.selectedPIDs)
+                guard !pids.isEmpty else {
+                    // Only reachable transiently while the picker UI is mid-edit
+                    // (PIDSelectionStore never persists an empty set as the
+                    // resting selection) — skip the cycle rather than issuing a
+                    // pointless zero-PID request or treating it as an error.
+                    try? await Task.sleep(nanoseconds: 300_000_000)
+                    continue
+                }
                 let cycleStart = Date()
                 do {
                     let results = try await service.requestPIDs(pids, unit: .metric)

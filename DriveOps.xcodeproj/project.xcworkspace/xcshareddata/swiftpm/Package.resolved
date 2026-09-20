@@ -1,5 +1,5 @@
 {
-  "originHash" : "31be6175ac13e3056d37a67cbd9aa06b6148b2895b9cf6e6a08f6df51d40d22f",
+  "originHash" : "0c5ec087f69249a587ad0428f3ea458d6724d4d57d4ac21aacb3fe71836c0fe0",
   "pins" : [
     {
       "identity" : "appleintelligenceforswiftui",
@@ -13,10 +13,10 @@
     {
       "identity" : "evmswiftobd2",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/valexa/EVMSwiftOBD2.git",
+      "location" : "https://github.com/AbdulDavids/EVMSwiftOBD2.git",
       "state" : {
-        "branch" : "develop",
-        "revision" : "ff69b919875ba19f901f2f8db05f55bb214b4d24"
+        "branch" : "main",
+        "revision" : "e73d56addd234c2766011ed951d89efce0761ba6"
       }
     },
     {

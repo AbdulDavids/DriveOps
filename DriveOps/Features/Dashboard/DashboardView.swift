@@ -21,11 +21,23 @@ struct DashboardView: View {
                 VStack(spacing: 20) {
                     ConnectionCardView(vm: vm, showWifiSheet: $showWifiSheet, showBTSheet: $showBTSheet)
 
-                    if !vm.liveData.isEmpty {
-                        LiveDataCardView(liveData: vm.liveData, metricHistory: vm.metricHistory, isWide: isWide)
+                    // Shown whenever connected, even with zero PIDs selected —
+                    // the card itself is the entry point to the PID picker
+                    // (LiveDataCardView.emptySelectionPrompt), so hiding it on
+                    // an empty selection would hide the way back into it.
+                    if vm.connectionState.isConnected {
+                        LiveDataCardView(vm: vm, isWide: isWide)
                     }
 
-                    if isWide && !vm.liveData.isEmpty {
+                    // KeyGaugesRow's own per-gauge `if let` already hides an
+                    // individual gauge when its PID isn't selected — this gate
+                    // is for the row as a whole, so deselecting all three of
+                    // its fixed metrics (RPM/Speed/Engine Load) removes the
+                    // row entirely instead of leaving an empty gap where it
+                    // used to be. `!liveData.isEmpty` alone wasn't enough:
+                    // other selected PIDs would keep it non-empty while none
+                    // of them are ones this row actually displays.
+                    if isWide && KeyGaugesRow.hasAnyKey(in: vm.liveData) {
                         KeyGaugesRow(liveData: vm.liveData)
                     }
 
@@ -60,8 +72,12 @@ struct DashboardView: View {
 private struct KeyGaugesRow: View {
     let liveData: [String: String]
 
-    private let keys = ["Engine RPM", "Vehicle Speed", "Engine Load"]
+    static let keys = ["Engine RPM", "Vehicle Speed", "Engine Load"]
     private let colors: [Color] = [.accentColor, .orange, .green]
+
+    static func hasAnyKey(in liveData: [String: String]) -> Bool {
+        keys.contains { liveData[$0] != nil }
+    }
 
     private func parsed(_ value: String) -> Double {
         Double(value.components(separatedBy: CharacterSet(charactersIn: "0123456789.-").inverted).joined()) ?? 0
@@ -69,7 +85,7 @@ private struct KeyGaugesRow: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            ForEach(Array(keys.enumerated()), id: \.element) { index, key in
+            ForEach(Array(Self.keys.enumerated()), id: \.element) { index, key in
                 if let raw = liveData[key] {
                     let current = parsed(raw)
                     let gMin = MetricGaugeDomain.min(for: key, observed: current)
