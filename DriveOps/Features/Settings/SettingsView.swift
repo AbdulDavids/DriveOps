@@ -17,6 +17,28 @@ private struct ChangelogEntry: Identifiable {
 
 private let changelog: [ChangelogEntry] = [
     ChangelogEntry(
+        version: "0.3.2",
+        date: "Sep 2026",
+        items: [
+            "Selectable Track color schemes — Lime, Cyan, Amber, Magenta, and Rainbow (each sensor field gets its own color, F1-dash style)",
+            "Rainbow is now the default Track color scheme",
+            "Track's lap timer card now holds the Stop/Lap and Reset/Start controls, freeing up space at the bottom of the panel",
+            "Removed the redundant \"hold a field to change it\" hint and \"manual timing\" caption from Track",
+            "Track's rev strip is always green/yellow/red by segment, independent of the selected color scheme",
+        ]
+    ),
+    ChangelogEntry(
+        version: "0.3.1",
+        date: "Sep 2026",
+        items: [
+            "Full-screen Track instrument panel with manual lap timing",
+            "Sensor dashboard presets, scoped per vehicle",
+            "Dashboards remain useful while offline",
+            "Typed metric comparison view",
+            "Searchable sensor catalogue for choosing live data fields",
+        ]
+    ),
+    ChangelogEntry(
         version: "0.3.0",
         date: "Sep 2026",
         items: [
