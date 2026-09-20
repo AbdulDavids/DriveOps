@@ -24,20 +24,13 @@ enum PIDCatalog {
         .filter(\.properties.live)
         .sorted { $0.properties.command < $1.properties.command }
 
-    /// The poll list DriveOps shipped with before PIDs became selectable —
-    /// used as the default selection so existing behavior doesn't change
-    /// for anyone who hasn't opened the picker yet.
+    /// A compact first dashboard. Existing saved choices are preserved; this
+    /// only applies to first use or a new vehicle layout.
     static let defaultSelection: Set<OBDCommand> = [
         .mode1(.rpm),
         .mode1(.speed),
         .mode1(.coolantTemp),
-        .mode1(.throttlePos),
         .mode1(.engineLoad),
-        .mode1(.intakeTemp),
-        .mode1(.maf),
-        .mode1(.barometricPressure),
-        .mode1(.intakePressure),
-        .mode1(.timingAdvance),
     ]
 }
 

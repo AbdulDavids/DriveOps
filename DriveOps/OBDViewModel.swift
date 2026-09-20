@@ -431,6 +431,7 @@ class OBDViewModel: ObservableObject {
                 var updatedMetrics = self.liveMetrics
                 for (key, reading) in readings {
                     let metric = MetricCatalog.simulated(name: key, value: reading.value, unit: reading.unit, at: now)
+                    guard self.selectedPIDs.contains(where: { $0.properties.command == metric.id }) else { continue }
                     updatedMetrics[metric.id] = metric
                     updated[metric.name] = MetricCatalog.format(metric)
                     let sample = MetricSample(timestamp: now, value: reading.value)

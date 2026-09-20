@@ -49,9 +49,12 @@ struct LiveDataCardView: View {
             } else {
                 LazyVGrid(columns: columns, spacing: 12) {
                     ForEach(dashboardMetrics) { metric in
-                        MetricTile(metric: metric, history: vm.metricHistory[metric.name] ?? []) {
-                            selectedMetric = metric
-                        }
+                        MetricTile(
+                            metric: metric,
+                            history: vm.metricHistory[metric.name] ?? [],
+                            action: { selectedMetric = metric },
+                            isConnected: vm.connectionState.isConnected
+                        )
                     }
                 }
                 HStack {
@@ -79,8 +82,10 @@ private struct MetricTile: View {
     let metric: LiveMetric
     let history: [MetricSample]
     let action: () -> Void
+    let isConnected: Bool
 
     private var status: String? {
+        if !isConnected { return "Connect to update" }
         if let quality = metric.quality.label { return quality }
         if metric.updatedAt == .distantPast { return "Waiting" }
         if Date().timeIntervalSince(metric.updatedAt) > 2 { return "Last reading" }
@@ -253,6 +258,12 @@ private func redesignPreviewViewModel() -> OBDViewModel {
 #Preview("Waiting for a sensor") {
     let vm = OBDViewModel.stub(state: .connectedToVehicle)
     vm.dashboardMetricIDs = ["010C"]
+    return LiveDataCardView(vm: vm).padding()
+}
+
+#Preview("Saved dashboard offline") {
+    let vm = OBDViewModel.stub(state: .disconnected)
+    vm.dashboardMetricIDs = ["010C", "010D", "0105", "0104"]
     return LiveDataCardView(vm: vm).padding()
 }
 #endif

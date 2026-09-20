@@ -21,13 +21,9 @@ struct DashboardView: View {
                 VStack(spacing: 20) {
                     ConnectionCardView(vm: vm, showWifiSheet: $showWifiSheet, showBTSheet: $showBTSheet)
 
-                    // Shown whenever connected, even with zero PIDs selected —
-                    // the card itself is the entry point to the PID picker
-                    // (LiveDataCardView.emptySelectionPrompt), so hiding it on
-                    // an empty selection would hide the way back into it.
-                    if vm.connectionState.isConnected {
-                        LiveDataCardView(vm: vm, isWide: isWide)
-                    }
+                    // The saved dashboard remains visible offline, so a user
+                    // can review/edit their layout before reconnecting.
+                    LiveDataCardView(vm: vm, isWide: isWide)
 
                     if let info = vm.obdInfo {
                         VehicleInfoCardView(info: info)
