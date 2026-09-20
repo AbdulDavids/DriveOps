@@ -108,7 +108,7 @@ private struct SettingsPreferencesView: View {
     // never sees this hardcoded .systemModel default override their old
     // on/off toggle setting.
     @AppStorage("onDeviceAIMode") private var aiModeRaw: String = OnDeviceAIMode.systemModel.rawValue
-    @AppStorage("trackColorScheme") private var trackColorSchemeRaw = TrackColorScheme.lime.rawValue
+    @AppStorage("trackColorScheme") private var trackColorSchemeRaw = TrackColorScheme.rainbow.rawValue
 
     private var aiMode: OnDeviceAIMode { OnDeviceAIMode(rawValue: aiModeRaw) ?? .systemModel }
 

@@ -33,10 +33,10 @@ struct TrackPanel: View {
     @ObservedObject var session: TrackSession
     @Environment(\.dismiss) private var dismiss
     @AppStorage("trackSensorSlots") private var savedSlots = "010D,0105,0111,0104"
-    @AppStorage("trackColorScheme") private var colorSchemeRaw = TrackColorScheme.lime.rawValue
+    @AppStorage("trackColorScheme") private var colorSchemeRaw = TrackColorScheme.rainbow.rawValue
     @State private var editingSlot: Int?
     @State private var confirmReset = false
-    private var scheme: TrackColorScheme { TrackColorScheme(rawValue: colorSchemeRaw) ?? .lime }
+    private var scheme: TrackColorScheme { TrackColorScheme(rawValue: colorSchemeRaw) ?? .rainbow }
     private var slots: [String] {
         let ids = savedSlots.split(separator: ",").map(String.init)
         return ids.count == 4 && ids.allSatisfy({ PIDCatalog.command(named: $0) != nil }) ? ids : ["010D", "0105", "0111", "0104"]
