@@ -18,7 +18,13 @@ final class DriveOpsUITests: XCTestCase {
         XCUIDevice.shared.orientation = .landscapeLeft
         defer { XCUIDevice.shared.orientation = .portrait }
         XCTAssertTrue(app.buttons["START"].waitForExistence(timeout: 5))
-        XCTAssertFalse(app.tabBars.firstMatch.exists)
+        // The full-screen cover's tab bar can briefly remain queryable in the
+        // accessibility tree while its dismissal animation finishes, even
+        // after the new screen's own content already exists — wait it out
+        // instead of asserting the instant START appears.
+        let tabBarGone = NSPredicate(format: "exists == false")
+        let expectation = XCTNSPredicateExpectation(predicate: tabBarGone, object: app.tabBars.firstMatch)
+        XCTAssertEqual(XCTWaiter().wait(for: [expectation], timeout: 5), .completed)
         app.buttons["START"].tap()
         XCTAssertTrue(app.buttons["LAP"].waitForExistence(timeout: 5))
         app.buttons["LAP"].tap()
